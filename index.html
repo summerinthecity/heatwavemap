@@ -7,8 +7,8 @@
     <meta name="date" content="2014-03-25 15:40">
     <meta name="status" content="hidden">
 
-    <link rel="stylesheet" href="https://cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" />
-    <script src="https://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
+    <link rel="stylesheet" href="leaflet.css" />
+    <script src="leaflet.js"></script>
 
     <script src="TileLayer.GeoJSON.js"></script>
     <script src="Bing.js"></script>
@@ -289,37 +289,6 @@
 
     info.addTo(map);
 
-
-
-//    // Div containing the legend for the buurt
-//    var legendBuurt = L.control({position: 'bottomleft'});
-//
-//    legendBuurt.onAdd = function (map) {
-//        var inner = '';
-//
-//        var div = L.DomUtil.create('div', 'info legend'),
-//            grades = [-1.0, 0, 1, 2, 3, 4, 5, 6],
-//            labels = [];
-//
-//        // loop through our density intervals and generate a label with a colored square for each interval
-//        for (var i = 0; i < grades.length; i++) {
-//            inner += '<i style="background:' + getColorBuurt(grades[i] + 0.5) + '"></i> ' 
-//            if( i == 0 ) {
-//                inner += '<' + grades[i] + '<br>';
-//            }
-//            else if ( i < grades.length - 1 ) {
-//                inner += grades[i] + '&ndash;' + grades[i + 1] + '<br>';
-//            }
-//            else {
-//                inner += grades[i] + '+';
-//            }
-//        }
-//
-//        div.innerHTML = inner;
-//        return div;
-//    };
-//
-//    legendBuurt.addTo(map);
 
     var osm  = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: 'Map data (c) <a href="http://openstreetmap.org">OpenStreetMap</a> contributors' });
     var bing = new L.BingLayer('AsDDkoS-r3nPK1YQxaPP-59sIH7f_zlbQ4Y2EAhphb9GUNpCvEw0wlT4g_2zZdR-'); 
