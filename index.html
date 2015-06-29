@@ -13,8 +13,8 @@
     <script src="summerintheciyt/TileLayer.GeoJSON.js"></script>
     <script src="summerintheciyt/Bing.js"></script>
 
-    <link rel="stylesheet" href="summerintheciyt/theme/css/bootstrap.journal.min.css" type="text/css"/>
-    <script src="summerinthecity/theme/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="summerintheciyt/bootstrap.journal.min.css" type="text/css"/>
+    <script src="summerinthecity/bootstrap.min.js"></script>
 
     <style>
         body {
@@ -96,7 +96,7 @@
     map.setView(new L.LatLng(51.968824, 5.665107), 14);
 
     // Set-up gemeentes
-    var gemeenteURL = '../gmtile/{z}_{x}_{y}.json'; 
+    var gemeenteURL = 'summerinthecity/gmtile/{z}_{x}_{y}.json'; 
     var gemeenteTileLayer;
 
     var styleGemeente = {
@@ -161,7 +161,7 @@
 
 
     // Set-up buurten
-    var buurtURL = '../butile/{z}_{x}_{y}.json'; 
+    var buurtURL = 'summerinthecity/butile/{z}_{x}_{y}.json'; 
     var buurtTileLayer;
 
     function getColorBuurt(d) {
