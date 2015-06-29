@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>gemeente</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="date" content="2014-03-25 15:40">
+    <meta name="status" content="hidden">
+
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" />
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
+
+    <script src="../TileLayer.GeoJSON.js"></script>
+    <script src="../Bing.js"></script>
+
+    <link rel="stylesheet" href="../theme/css/bootstrap.journal.min.css" type="text/css"/>
+    <script src="../theme/js/bootstrap.min.js"></script>
+
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+        }
+        html, body, #map {
+            height: 100%;
+        }
+
+        .tilesource {
+            font-variant: small-caps;
+            font-weight: bold;
+            font-size: 75%;
+        }
+
+        .info {
+            padding: 6px 8px;
+            font: 14px/16px Arial, Helvetica, sans-serif;
+            background: white;
+            background: rgba(255,255,255,1.0);
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            border-radius: 5px;
+        }
+        .info h4 {
+            margin: 0 0 5px;
+            color: #777;
+        }
+        .info img {
+            float: right;
+            width: 50px;
+            height: 60px;
+        }   
+
+        .legend {
+            line-height: 18px;
+            color: #555;
+        }
+        .legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.7;
+        }
+
+
+        .butable {
+            text-align: right;
+            font-size: 150%;
+        }
+        .luurb {
+            margin-right: 1em;
+            color: rgba(255,60,60,1.0);
+        }
+        .luveg {
+            margin-right: 1em;
+            color: rgba(60,255,60,1.0);
+        }
+        .luh2o {
+            margin-right: 1em;
+            color: rgba(60,60,255,1.0);
+        }
+        .lupop {
+            margin-right: 1em;
+            color: rgba(0,0,0,1.0);
+        }
+
+
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script>
+
+    var map = new L.Map('map');
+       
+    map.setView(new L.LatLng(51.968824, 5.665107), 14);
+
+    // Set-up gemeentes
+    var gemeenteURL = '../gmtile/{z}_{x}_{y}.json'; 
+    var gemeenteTileLayer;
+
+    var styleGemeente = {
+            weight:         3,
+            color:     '#000',
+            fillcolor: '#888',
+        };
+    var styleGemeenteHighlight = {
+            weight:         5,
+            color:     '#000',
+            fillcolor: '#AAA',
+        };
+
+    function highlightGemeente(e) {
+        var layer = e.target;
+
+        if(map.getZoom() < 12) {
+            layer.setStyle(styleGemeenteHighlight);
+
+            if (!L.Browser.ie && !L.Browser.opera) {
+                layer.bringToFront();
+            }
+
+            info.updateGemeente(layer.feature.properties);
+        }
+    }
+
+    function resetGemeente(e) {
+        var layer = e.target;
+
+        layer.setStyle(styleGemeente);
+        info.updateGemeente();
+    }
+
+    function zoomToFeature(e) {
+        map.fitBounds(e.target.getBounds());
+    }
+
+    function onEachGemeente(feature, layer) {
+        layer.on({
+            mouseover: highlightGemeente,
+            click: highlightGemeente,
+            mouseout: resetGemeente,
+            doubleclick: zoomToFeature
+        });
+    }
+
+    gemeenteTileLayer = new L.TileLayer.GeoJSON(gemeenteURL, 
+            {
+                clipTiles:  false,
+                minZoom:        7,
+                maxZoom:       14,
+                maxNativeZoom:  9,
+                zindex:       200 ,
+            }, 
+            {
+                style:         styleGemeente,
+                onEachFeature: onEachGemeente
+            }
+    ).addTo(map);
+    map.addLayer(gemeenteTileLayer);
+
+
+    // Set-up buurten
+    var buurtURL = '../butile/{z}_{x}_{y}.json'; 
+    var buurtTileLayer;
+
+    function getColorBuurt(d) {
+        return d >  6 ? '#800026' :
+               d >  5 ? '#BD0026' :
+               d >  4 ? '#E31A1C' :
+               d >  3 ? '#FC4E2A' :
+               d >  2 ? '#FD8D3C' :
+               d >  1 ? '#FEB24C' :
+               d >  0 ? '#FED976' :
+                        '#FFEDA0' ;
+    }
+    function styleBuurt(feature) {
+        var newcolor = getColorBuurt(feature.properties.uhi95p * 0.01 );
+        return {
+            weight:       1,
+            color:        newcolor,
+            stroke:       false,
+            fillcolor:    newcolor,
+            opacity:      0.4,
+            fillOpacity:  0.4,
+        };
+    }
+    function styleBuurtHighlight(feature) {
+        var newcolor = getColorBuurt(feature.properties.uhi95p * 0.01 );
+        return {
+            weight:       5,
+            color:        '#FFF',
+            stroke:       false,
+            fillcolor:    newcolor,
+            opacity:      0.5,
+            fillOpacity:  0.5,
+        };
+    }
+
+    function highlightBuurt(e) {
+        var layer = e.target;
+
+        layer.setStyle(styleBuurtHighlight(layer.feature));
+
+        if (!L.Browser.ie && !L.Browser.opera) {
+            layer.bringToFront();
+        }
+
+        info.updateBuurt(layer.feature.properties);
+    }
+    function resetBuurt(e) {
+        var layer = e.target;
+
+        layer.setStyle(styleBuurt(layer.feature));
+        info.updateBuurt();
+    }
+
+    function onEachBuurt(feature, layer) {
+        layer.on({
+            mouseover: highlightBuurt,
+            click: highlightBuurt,
+            mouseout: resetBuurt,
+            doubleclick: zoomToFeature,
+        });
+    }
+
+    buurtTileLayer = new L.TileLayer.GeoJSON(buurtURL, 
+            {
+                clipTiles:  false,
+                minZoom:       12,
+                maxZoom:       16,
+                maxNativeZoom: 10,
+                zindex:       100,
+            }, 
+            {
+                style:         styleBuurt,
+                onEachFeature: onEachBuurt,
+            }
+    ).addTo(map);
+    map.addLayer(buurtTileLayer);
+
+
+    // Div containing properties
+    var info = L.control();
+
+    info.onAdd = function (map) {
+        this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
+        this.updateGemeente();
+        return this._div;
+    };
+
+    // method that we will use to update the control based on feature properties passed
+    info.updateGemeente = function (props) {
+        var inner = '';
+        if (props) {
+            inner += '<div> <span> <b>' + props.naam + '</b></span> <img src="../images/Wapens/' + props.image + '" /> </div>' 
+            inner += '<h4> Bevolkingsdichtheid</h4>' + props.bevolkingsdichtheid.toFixed(2) + ' mensen / ha';
+        }
+        else {
+            inner += '<h4> Bevolkingsdichtheid</h4> Kies een gebied';
+        }
+        this._div.innerHTML = inner;
+    };
+
+    info.updateBuurt = function(props) {
+        var inner = '';
+        if (props) {
+            inner += '<h4>' + props.bu_naam + '</h4>';
+            inner += '<div class="table"><span> <table class="table butable"> <tbody>';
+            inner += '<tr> <td>' + props.inw   +  '</td> <td><span class="lupop glyphicon glyphicon-user"          > </tr>';
+            inner += '<tr> <td>' + props.urban + '%</td> <td><span class="luurb glyphicon glyphicon-home"          > </tr>';
+            inner += '<tr> <td>' + props.green + '%</td> <td><span class="luveg glyphicon glyphicon-tree-deciduous"> </tr>';
+            inner += '<tr> <td>' + props.water + '%</td> <td><span class="luh2o glyphicon glyphicon-tint"          > </tr>';
+
+            inner += '</tbody> </table> </div></span>';
+
+            inner += '<div class="table-responsive"><span> <table class="table butable"> <tbody>';
+            inner += '<tr> <td>UHI50P</td> <td>' + (props.uhi50p * 0.01).toFixed(2)  + '&deg;</td> </tr>';
+            inner += '<tr> <td>UHI95P</td> <td>' + (props.uhi95p * 0.01).toFixed(2)  + '&deg;</td> </tr>';
+            inner += '</tbody> </table> </div></span>';
+
+            this._div.innerHTML = inner;
+        }
+        else {
+            inner += 'Kies een buurt';
+        }
+        this._div.innerHTML = inner;
+    };
+
+    info.addTo(map);
+
+
+
+//    // Div containing the legend for the buurt
+//    var legendBuurt = L.control({position: 'bottomleft'});
+//
+//    legendBuurt.onAdd = function (map) {
+//        var inner = '';
+//
+//        var div = L.DomUtil.create('div', 'info legend'),
+//            grades = [-1.0, 0, 1, 2, 3, 4, 5, 6],
+//            labels = [];
+//
+//        // loop through our density intervals and generate a label with a colored square for each interval
+//        for (var i = 0; i < grades.length; i++) {
+//            inner += '<i style="background:' + getColorBuurt(grades[i] + 0.5) + '"></i> ' 
+//            if( i == 0 ) {
+//                inner += '<' + grades[i] + '<br>';
+//            }
+//            else if ( i < grades.length - 1 ) {
+//                inner += grades[i] + '&ndash;' + grades[i + 1] + '<br>';
+//            }
+//            else {
+//                inner += grades[i] + '+';
+//            }
+//        }
+//
+//        div.innerHTML = inner;
+//        return div;
+//    };
+//
+//    legendBuurt.addTo(map);
+
+    var osm  = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: 'Map data (c) <a href="http://openstreetmap.org">OpenStreetMap</a> contributors' });
+    var bing = new L.BingLayer('AsDDkoS-r3nPK1YQxaPP-59sIH7f_zlbQ4Y2EAhphb9GUNpCvEw0wlT4g_2zZdR-'); 
+
+    var imageUrl = 'http://www.met.wau.nl/images/none.jpg',
+        imageBounds = [[40.712216, -74.22655], [40.773941, -74.12544]];
+
+    var NoneLayer = L.imageOverlay(imageUrl, imageBounds);
+
+    map.addLayer(osm);
+
+    L.control.scale({imperial: false}).addTo(map);
+    L.control.layers({'Roadmap <span class="tilesource">OSM</span>':      osm,
+                      'Satellite <span class="tilesource">Bing</span>':   bing, 
+                      'None':                                             NoneLayer,
+                     },
+                     {'Gemeentes': gemeenteTileLayer, 
+                      'Buurten': buurtTileLayer
+                     },
+                     {position:'topleft'}
+                    ).addTo(map);
+
+    </script>
+</body>
+</html>
