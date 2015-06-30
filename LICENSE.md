@@ -200,3 +200,23 @@ Apache License
    See the License for the specific language governing permissions and
    limitations under the License.
 
+
+
+
+
+
+DATA LICENSE
+============
+
+(c) Netherlands eScience Center, WUR
+Detailed reference in progress
+
+This data is based on:
+
+Kadaster / Centraal Bureau voor de Statistiek. (2014) Wijk- en buurtkaart 2013 versie 1. [Online]. Available: http://www.cbs.nl/nl-NL/menu/themas/dossiers/nederland-regionaal/publicaties/geografische-data/archief/2014/2013-wijk-en-buurtkaart-art.htm
+
+(2008) Digitale kleuren luchtfoto nederland 2008 (dkln2008). Copyright Eurosense B.V. [Online]. Available: http://www.bestel3d.nl/nl/en/data/ dkln-imagery
+
+(2013, November) Top10nl. Kadaster. [Online]. Available: http://www.kadaster.nl/web/artikel/productartikel/TOP10NL.htm
+
+
