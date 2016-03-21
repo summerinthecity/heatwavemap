@@ -1,0 +1,181 @@
+
+
+
+
+
+
+
+
+SRID 28992
+
+14611.8328097611 307229.236143462
+14611.8328097611 614304.26264651
+277431.018512982 614304.26264651
+277431.018512982 307229.236143462
+14611.8328097611 307229.236143462
+
+x:  14611.8328097611 277431.018512982      dx = 262819.1857032209 m = 2628 gridpoints
+y: 307229.236143462  614304.26264651       dy = 307075.026503048  m = 3071 gridpoints
+
+
+
+ul
+3.37086582183838, 53.5113830566406
+
+shift a bit west (-0.025) and north 
+3.345, 53.545
+
+
+
+SRID 4326
+
+3.37086582183838 50.7538833618164
+3.37086582183838 53.5113830566406
+7.21166610717773 53.5113830566406
+7.21166610717773 50.7538833618164
+3.37086582183838 50.7538833618164
+
+lon: 3.37086582183838  7.21166610717773   dlon = 3.84080028533935   -> .00146149173719153348 deg/pixel of 100m
+lat: 50.7538833618164 53.5113830566406    dlat = 2.7574996948242    -> .00089791588890400521 deg/pixel of 100m
+
+Rounding
+x 2628 -> 2720 pixels of 100m -> 10880 pixels of 25m
+y 3071 -> 3264 pixels of 100m -> 12288 pixels of 25m
+
+domain:
+dlon 3.975 deg
+dlat 2.758 deg
+
+lon -> 0.0014614 deg/pixel of 100m   0.000365350 deg/pixel of 25m
+lat -> 0.0008979 deg/pixel of 100m   0.000224475 deg/pixel of 25m
+
+
+
+-- Create a tiling over the Netherlands
+CREATE TABLE nltiles(rid serial primary key, rast raster);
+INSERT INTO nltiles(rid,rast)
+VALUES( 1, St_MakeEmptyRaster(128, 136, 3.345, 53.6  , 0.0014614 * 2720 / 128, -0.0008979  * 3264 / 136, 0,0, 4326) );
+
+UPDATE nltiles SET rast = ST_Addband(rast,'32BSI'::text,0) WHERE rid = 1; 
+SELECT AddRasterConstraints( 'nltiles', 'rast' );
+
+CREATE TABLE nltilesbb(id serial primary key, val double precision, x integer, y integer, processed bool);
+SELECT AddGeometryColumn ('public','nltilesbb','geom',4326,'POLYGON',2);
+INSERT INTO nltilesbb (val,x,y,geom,processed)
+SELECT (gv).val  AS val,
+       (gv).x    AS x,
+       (gv).y    AS y,
+       (gv).geom AS geom,
+       false     AS processed
+FROM (SELECT ST_PixelAsPolygons(rast) AS gv FROM nltiles) AS foo ;
+
+UPDATE nltilesbb SET val = 0;
+UPDATE nltilesbb SET val = (y-1)*128 + x FROM nl WHERE ST_Intersects( ST_SetSRID(nltilesbb.geom,4326), ST_SetSRID(nl.geom,4326) ) ;
+
+
+CREATE TABLE landuse(rid integer primary key, rast raster, processed bool);
+INSERT INTO landuse(rid, rast, processed)
+(
+WITH foo AS (
+        SELECT ST_PointN ( ST_Boundary( geom ),1 ) AS ul,
+               (y-1)*128 +x                        AS rid
+        FROM nltilesbb
+        WHERE val > 0) 
+SELECT
+    rid,
+    ST_MakeEmptyRaster( 85, 96,  ST_X(ul), ST_Y(ul), 0.0014614 / 4, -0.0008979 / 4, 0, 0, 4326) AS rast,
+    false AS processed
+FROM foo);
+
+WITH foo AS (
+    SELECT rid AS rid, ST_AddBand( rast, '8BUI'::text, 0, 0) AS rast FROM landuse WHERE rid > 0
+)
+UPDATE landuse
+SET rast = foo.rast FROM foo WHERE landuse.rid = foo.rid;
+
+
+
+CREATE INDEX landuse_gist ON landuse USING gist( ST_ConvexHull(rast) );
+
+SELECT AddRasterConstraints( 'landuse', 'rast' );
+VACUUM ANALYZE landuse;
+
+
+
+-- process a single raster
+SELECT aggregate_landuse(myrid) FROM (SELECT rid AS myrid FROM landuse WHERE processed = FALSE LIMIT 1) AS todo;
+
+-- types:
+--  aanlegsteiger                      1
+--  akkerland                          2
+--  basaltblokken, steenglooiing       3
+--  bebouwd gebied                     4
+--  boomgaard                          5
+--  boomkwekerij                       6
+--  bos: gemengd bos                   7
+--  bos: griend                        8
+--  bos: loofbos                       9
+--  bos: naaldbos                     10
+--  dodenakker                        11
+--  dodenakker met bos                12
+--  fruitkwekerij                     13
+--  grasland                          14
+--  heide                             15
+--  laadperron                        16
+--  onbekend                          17
+--  overig                            18
+--  populieren                        19
+--  spoorbaanlichaam                  20
+--  zand                              21
+--  wegdeel                           22
+--  waterdeel                         23
+
+
+select x,y,val from waterdeel_vlak, landuse join nltilesbb on nltilesbb.val = landuse.rid where st_intersects( st_transform( nltilesbb.geom, 28992 ), waterdeel_vlak.wkb_geometry) and landuse.processed != true ; 
+
+
+
+-- Add water tiles
+-- We allocated a grid over the "land" part of the netherlands
+-- this leaves some holes (lake ijssel) and could lead to an inaccurate coastline when 'undef' is reinterpreted as land when the fall-back lower resolution maps are used
+WITH foo AS (
+    SELECT x,y,val
+    FROM waterdeel_vlak, nltilesbb
+    WHERE ST_Intersects( ST_Transform( nltilesbb.geom, 28992 ), waterdeel_vlak.wkb_geometry)                   
+)
+UPDATE nltilesbb
+SET processed = TRUE, val = (y-1)*128 + x ;
+FROM foo
+WHERE foo.x = nltilesbb.x AND foo.y = nltilesbb.y;
+
+-- remove already done tiles
+WITH foo AS (
+    SELECT x,y FROM landuse JOIN nltilesbb ON landuse.rid = nltilesbb.val
+)
+UPDATE nltilesbb
+SET processed = FALSE, val = 0
+FROM
+    foo
+WHERE 
+    nltilesbb.x = foo.x AND nltilesbb.y = foo.y;
+
+INSERT INTO landuse(rid, rast, processed) (
+WITH foo AS (
+        SELECT ST_PointN ( ST_Boundary( geom ),1 ) AS ul,
+               (y-1)*32 * 4 +x                     AS rid
+        FROM nltilesbb
+        WHERE processed = TRUE ) 
+SELECT
+    rid,
+    ST_AddBand( ST_MakeEmptyRaster( 85, 96,  ST_X(ul), ST_Y(ul), 0.0014614 / 4, -0.0008979 / 4, 0, 0, 4326), '8BUI'::text, 0, 0 ) AS rast,
+    false AS processed
+FROM foo);
+
+
+-- manually select missing borders
+
+ update nltilesbb set processed = TRUE where val in (4857, 4985,6127, 6381, 6768, 8943, 10222, 10221, 10218, 10595, 10332, 11224, 11866, 11995, 14298, 14300, 14556, 15062, 15189, 15316, 15187, 16983, 16981, 16978, 16977, 16976, 16974, 16973, 14413, 14281, 13345, 13850, 14224, 13705);
+
+
+update nltilesbb set processed = TRUE where val in ( 15317, 15315, 13628, 12590, 12717, 13344 );
+

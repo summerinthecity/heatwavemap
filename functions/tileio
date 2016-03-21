@@ -1,0 +1,34 @@
+http://geeohspatial.blogspot.nl/2013/07/exporting-postgis-rasters-to-other.html
+
+http://postgis.net/docs/using_raster_dataman.html#RT_PLPython
+
+
+One major limitation of the canned PLPython function is that it may not provide approach read/write permissions on the document. For example, on my Postgres server at work, the r/w permissions were restricted to the owner of the output files – aka, “postgres”. As “gleason”, I could not  SCP the data back to my laptop. To work around this, I simply modified the function a bit:
+
+write_file (param_bytes bytea, param_filepath text, chmod character varying (4))
+
+Here’s an example of how to use this function:
+
+SELECT write_file(ST_AsTIFF(rast), '/home/jiska/DATA/obs/GIS/TOP10NL_landuse/tile_' || rid || '.tif','777')
+FROM landuse
+WHERE ST_Count(rast,1,True) > 0; -- ignore tiles that are entirely no data
+
+
+For a list of chmod codes associated with various r/w/x permissions, see: http://www.askapache.com/security/chmod-stat.html#Permission_0000_0777. If you’re not worried about permissions and want to assign r/w/x to all users, simply use chmod = 0777. 
+
+Also, fix SELinux crap:
+# semanage fcontext -a -t postgresql_db_t /data
+# restorecon -v '/data'
+
+
+
+
+-- Write tiles to file
+SELECT write_file(ST_AsTIFF(rast), '/data/tile_' || rid || '.tif','777')
+FROM landuse
+WHERE ST_Count(rast,1,True) > 0; -- ignore tiles that are entirely no data
+
+
+
+SELECT write_file( ST_AsTIFF(rast), '/data/nudapt_wur.tif', '777' ) FROM (SELECT ST_Union(rast) FROM myurb AS rast) AS foo;
+

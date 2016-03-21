@@ -1,0 +1,25 @@
+--   Table "public.lufondvi"
+-- Column |  Type   | Modifiers 
+----------+---------+-----------
+-- rid    | integer | not null
+-- rast   | raster  | 
+--Indexes:
+--    "lufondvi_pkey" PRIMARY KEY, btree (rid)
+--    "lufondvi_rast_gist" gist (st_convexhull(rast))
+
+
+WITH task AS (
+    SELECT lufondvi.rid AS rid,
+           lufo.rast    AS rast
+    FROM lufo,lufondvi
+    WHERE lufondvi.rast IS NULL AND lufondvi.rid = lufo.rid
+    LIMIT 50000
+)
+UPDATE lufondvi
+SET 
+    rast = ST_MapAlgebraFct( task.rast, 4, task.rast, 1, 'ndvi_callbackfunc(double precision, double precision, text[])'::regprocedure, '8BUI', 'FIRST' )
+FROM
+    task
+WHERE
+    lufondvi.rid = task.rid
+;

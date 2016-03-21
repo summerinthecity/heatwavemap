@@ -1,0 +1,14 @@
+setup a postgres database
+
+create the postgis extensions, the enumerated types, tables, triggers, etc. for TOP10NL by
+cat prepare_postgres | psql
+
+import files using GDAL/OGR. Use the hand-edited gfs file top10nl.gfs_nowidth
+
+for i in *.gml; do
+    cp /home/jiska/DATA/obs/GIS/TOP10NL_myscheme/top10nl.gfs_nowidth ${i%%.gml}.gfs
+    ogr2ogr -append -progress -f PostgreSQL PG:"dbname=jiska password=postgres" $i
+done
+
+clean up, and create subtables on geometry type to speed up QGis:
+cat finalize_postgres | psql

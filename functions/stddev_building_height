@@ -1,0 +1,69 @@
+-- Standard deviation of building height STDH_URB2D URB_PARAM=93
+-- definition of building a bit arbitrary (ie. the TOP10NL objects)
+-- A grid cell can 'cut' a building in parts. The parts in the same cell are still considred one building.
+-- Its height is then the average over OHN of the intersecting parts.
+--  
+-- arguments: pixel, geometry    grid cell to analyze
+-- 
+-- depends on: gebouw, the TOP10NL table for buildings
+--             ohn, the object height map, relative to maaiveld (ie. building height)
+--
+-- returns: stddev building height [m], always >= 0
+-- 
+CREATE OR REPLACE FUNCTION stddev_building_height(pixel geometry) RETURNS real
+AS $$
+DECLARE
+    rrid   integer;
+    srid   integer;
+    pixel_srid geometry;
+    result real;
+BEGIN
+
+    -- get the correct SRIDs
+    SELECT ST_SRID(rast)         FROM ohn     LIMIT 1 INTO rrid ;  
+    SELECT ST_SRID(wkb_geometry) FROM gebouw  LIMIT 1 INTO srid ;  
+
+    SELECT ST_Transform(pixel, srid) INTO pixel_srid;
+
+    SELECT
+        stddev_samp( mean ) 
+    FROM
+        (
+        SELECT
+            (ST_SummaryStats(g)).*
+        FROM
+            (
+            SELECT
+                ogc_fid,
+                ST_Union( ST_Clip(rast, ST_Transform(geometry_srid, rrid))) AS g
+            FROM
+                (
+                SELECT
+                    ogc_fid,
+                    ST_Intersection(wkb_geometry, pixel_srid) AS geometry_srid
+                FROM
+                    gebouw
+                WHERE
+                    (wkb_geometry && pixel_srid) AND ST_Intersects(wkb_geometry, pixel_srid)
+                ) AS foo,
+                ohn 
+            WHERE
+                (rast && ST_Transform( geometry_srid, rrid) ) AND ST_Intersects( rast, ST_Transform( geometry_srid, rrid))
+            GROUP BY
+                ogc_fid
+            ) AS foo
+            WHERE g IS NOT NULL AND ST_IsEmpty(g) = FALSE
+        ) AS foo
+    WHERE
+        mean > 0 AND count > 0
+    INTO
+        result;
+
+    -- Keep results meaningfull
+    IF result > 0 THEN
+        RETURN result;
+    ELSE
+        RETURN 0;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;

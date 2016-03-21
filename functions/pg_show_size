@@ -1,0 +1,27 @@
+SELECT schemaname, tablename,
+pg_size_pretty(size) AS size_pretty,
+pg_size_pretty(total_size) AS total_size_pretty
+
+FROM (SELECT *,
+      pg_relation_size(schemaname||'.'||tablename) AS size,
+      pg_total_relation_size(schemaname||'.'||tablename) AS total_size
+
+      FROM pg_tables) AS TABLES
+
+WHERE schemaname='public' 
+
+ORDER BY tablename ;
+
+
+SELECT 'total',
+pg_size_pretty(sum(size))        AS size_pretty,
+pg_size_pretty(sum(total_size))  AS total_size_pretty
+
+FROM (SELECT *,
+      pg_relation_size(schemaname||'.'||tablename) AS size,
+      pg_total_relation_size(schemaname||'.'||tablename) AS total_size
+
+      FROM pg_tables) AS TABLES
+
+WHERE schemaname='public';
+

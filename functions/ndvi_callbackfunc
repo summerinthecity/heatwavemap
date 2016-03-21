@@ -1,0 +1,13 @@
+CREATE OR REPLACE FUNCTION ndvi_callbackfunc(nir double precision, vis double precision, VARIADIC args TEXT[])
+    RETURNS double precision
+    AS $$ BEGIN
+        CASE
+            WHEN nir IS NULL OR vis IS NULL THEN
+                RETURN NULL;
+            WHEN (nir + vis) = 0 THEN
+                RETURN 0;
+            ELSE
+                RETURN trunc( 255.0 * ((nir - vis)/(nir + vis)) );
+        END CASE;
+    END; $$
+    LANGUAGE 'plpgsql' IMMUTABLE;

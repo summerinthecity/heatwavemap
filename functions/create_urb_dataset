@@ -1,0 +1,16 @@
+-- Add the 132 bands (each representing an urban parameter) to the raster
+-- arguments: urbtable    string, name of the table. It should contain: rast raster, rid integer
+--            urbrid      integer, rid of the raster to add the bands to
+--
+-- returns: 1 on succes
+--
+CREATE OR REPLACE FUNCTION create_urb_dataset(urbtable varchar,urbrid integer) RETURNS integer AS $$
+DECLARE
+    id integer;
+BEGIN
+FOR id IN 1..132 LOOP
+    EXECUTE format( E'UPDATE %s SET rast = ST_AddBand(rast,\'32BSI\'::text,0)  WHERE rid = %s;', urbtable, urbrid );
+END LOOP;
+RETURN 1;
+END;
+$$ LANGUAGE plpgsql;

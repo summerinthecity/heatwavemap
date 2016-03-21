@@ -1,0 +1,14 @@
+-- From:
+-- http://geeohspatial.blogspot.nl/2013/07/exporting-postgis-rasters-to-other.html
+--
+CREATE OR REPLACE FUNCTION write_file (param_bytes bytea, param_filepath text, chmod character varying (4))
+RETURNS text
+AS $$
+import os
+f = open(param_filepath, 'wb')
+chmod_oct = int(chmod,8) # new addition (converts chmod octal code to associated integer value)
+os.chmod(param_filepath,chmod_oct) # new addition (changes read/write permissions)
+f.write(param_bytes)
+f.close() # new addition (ensures file is closed after writing)
+return param_filepath
+$$ LANGUAGE plpythonu;

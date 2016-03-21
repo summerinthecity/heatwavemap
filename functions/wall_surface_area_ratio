@@ -1,0 +1,51 @@
+-- Building wall surface area ratio LF_URB2D URB_PARAM=95
+-- or lambda_b. Sum of wall surface area plus roof divided by the gridcell
+--  
+-- arguments: pixel, geometry    grid cell to analyze
+-- 
+-- depends on: gebouwview, the TOP10NL table for buildings extended with a building height column called 'mean'
+--
+-- returns: building wall surface plus roof, divided by grid cell area [m2/m2 grid cell], always >= 0
+-- 
+CREATE OR REPLACE FUNCTION wall_surface_area_ratio(pixel geometry) RETURNS real
+AS $$
+DECLARE
+    srid   integer;
+    pixel_srid geometry;
+    result real;
+BEGIN
+
+    -- get the correct SRIDs
+    SELECT ST_SRID(wkb_geometry) FROM gebouw     LIMIT 1 INTO srid ;  
+    SELECT ST_Transform(pixel, srid)                     INTO pixel_srid;
+
+    WITH buildings AS (
+        SELECT
+           ogc_fid                                                           AS ogc_fid,
+           ST_length(ST_Intersection(ST_Boundary(wkb_geometry), pixel_srid)) AS circumference,
+           ST_Area(ST_Intersection(wkb_geometry, pixel_srid))                AS roof,
+           mean                                                              AS height
+
+        FROM
+           gebouwview
+
+        WHERE
+           ST_Intersects(wkb_geometry, pixel_srid)
+    )
+    SELECT
+        SUM( height * circumference + roof ) / ST_Area(pixel_srid)
+    FROM
+        buildings
+
+    INTO
+        result;
+
+    -- Keep results meaningfull
+    IF result > 0 THEN
+        RETURN result;
+    ELSE
+        RETURN 0;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+

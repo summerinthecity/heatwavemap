@@ -1,0 +1,85 @@
+-- Bulding Height Distribution URB_PARAM=118 - 132
+--
+-- statistics of the OHN map intersected by the grid cell and the TOP10NL gebouwen 
+--  
+-- arguments: pixel, geometry    grid cell to analyze
+-- 
+-- depends on: gebouw, the TOP10NL table for buildings
+--             ohn, the object height map, relative to maaiveld (ie. building height)
+--
+-- returns: int[] area of pixels in the 5m height bins. not normalized!
+-- 
+
+
+-- Building height distribution is given by a histogram of 15 bins, spanning 0 to 75 m.
+-- build in postgres width_bucket has incomplete documentation for corner cases, so implement our own.
+-- argument: height, numeric
+-- result:   bin
+CREATE OR REPLACE FUNCTION building_height_distribution_helper(height numeric) RETURNS integer
+AS $$
+BEGIN
+    IF height < 5 THEN
+        RETURN 1;
+    END IF;
+
+    IF height > 70 THEN
+        RETURN 15;
+    END IF;
+
+    RETURN 1 + (height / 5)::integer;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Building height distribution
+CREATE OR REPLACE FUNCTION building_height_distribution(pixel geometry) RETURNS int[]
+AS $$
+DECLARE
+    rrid   integer;
+    srid   integer;
+    pixel_srid geometry;
+    r      record;
+    result int[];
+BEGIN
+
+    result := array_fill(0, ARRAY[15]);
+
+    -- get the correct SRIDs
+    SELECT ST_SRID(rast)         FROM ohn     LIMIT 1 INTO rrid ;  
+    SELECT ST_SRID(wkb_geometry) FROM gebouw  LIMIT 1 INTO srid ;  
+
+    SELECT ST_Transform(pixel, srid) INTO pixel_srid;
+
+    FOR r   IN
+	SELECT count(val)                                          AS cnt,
+	       building_height_distribution_helper( val::numeric ) AS bin
+	FROM
+	   (
+	   SELECT (ST_PixelAsPolygons(clipped)).val
+	   FROM
+	      (
+	      SELECT ST_Clip(rast, building) AS clipped FROM
+		 (
+		 SELECT
+		     ST_Transform( ST_Intersection(wkb_geometry, pixel_srid), rrid) AS building
+		 FROM
+		     gebouw
+		 WHERE
+		     (wkb_geometry && pixel_srid) AND ST_Intersects(wkb_geometry, pixel_srid)
+		 ) AS foo,
+		 ohn
+	      WHERE
+		  (building && rast) AND ST_Intersects(building, rast ) 
+	      ) AS foo
+	   WHERE clipped IS NOT NULL AND ST_IsEmpty( clipped ) = FALSE
+	   ) AS foo
+	GROUP BY
+	    bin
+    LOOP
+
+        result[r.bin] := round(r.cnt);
+
+    END LOOP;
+
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql;

@@ -1,0 +1,475 @@
+
+
+--
+-- Split inrichtings element in sub tables on the geometry type
+--
+
+CREATE SEQUENCE inrichtingselement_lijn_seq;
+CREATE TABLE inrichtingselement_lijn (
+    ogc_fid integer NOT NULL DEFAULT nextval('inrichtingselement_lijn_seq'),
+    identificatie character varying(20),
+    dimensie dimensietype,
+    visualisatiecode integer,
+    tdncode integer,
+    hoogteniveau integer,
+    status statustype,
+    typeinrichtingselement typeinrichtingselementtype,
+    nummer double precision,
+    naamnl character varying(50),
+    naamfries character varying(50)
+);
+SELECT AddGeometryColumn( 'public', 'inrichtingselement_lijn', 'wkb_geometry', 28992, 'LINESTRING', 2 );
+
+CREATE SEQUENCE inrichtingselement_punt_seq;
+CREATE TABLE inrichtingselement_punt (
+    ogc_fid integer NOT NULL DEFAULT nextval('inrichtingselement_punt_seq'),
+    identificatie character varying(20),
+    dimensie dimensietype,
+    visualisatiecode integer,
+    tdncode integer,
+    hoogteniveau integer,
+    status statustype,
+    typeinrichtingselement typeinrichtingselementtype,
+    nummer double precision,
+    naamnl character varying(50),
+    naamfries character varying(50)
+);
+SELECT AddGeometryColumn( 'public', 'inrichtingselement_punt', 'wkb_geometry', 28992, 'POINT', 2 );
+
+INSERT INTO inrichtingselement_lijn(identificatie, dimensie, visualisatiecode, tdncode, hoogteniveau, status, typeinrichtingselement, nummer, naamnl, naamfries, wkb_geometry)
+SELECT
+    identificatie, 
+    dimensie, 
+    visualisatiecode, 
+    tdncode, 
+    hoogteniveau, 
+    status, 
+    typeinrichtingselement, 
+    nummer, 
+    naamnl, 
+    naamfries, 
+    wkb_geometry
+FROM
+    inrichtingselement
+WHERE
+    GeometryType(wkb_geometry) = 'LINESTRING';
+;
+
+INSERT INTO inrichtingselement_punt(identificatie, dimensie, visualisatiecode, tdncode, hoogteniveau, status, typeinrichtingselement, nummer, naamnl, naamfries, wkb_geometry)
+SELECT
+    identificatie, 
+    dimensie, 
+    visualisatiecode, 
+    tdncode, 
+    hoogteniveau, 
+    status, 
+    typeinrichtingselement, 
+    nummer, 
+    naamnl, 
+    naamfries, 
+    wkb_geometry
+FROM
+    inrichtingselement
+WHERE
+    GeometryType(wkb_geometry) = 'POINT';
+;
+
+CREATE INDEX inrichtingselement_lijn_idx ON inrichtingselement_lijn USING gist (wkb_geometry);
+CREATE INDEX inrichtingselement_punt_idx ON inrichtingselement_punt USING gist (wkb_geometry);
+
+
+
+
+
+
+--
+-- Split waterdeel in sub tables on the geometry type
+--
+
+
+CREATE SEQUENCE waterdeel_lijn_seq;
+CREATE TABLE waterdeel_lijn (
+    ogc_fid integer NOT NULL DEFAULT nextval('waterdeel_lijn_seq'),
+    gml_id character varying(1),
+    identificatie character varying(20),
+    dimensie dimensietype,
+    visualisatiecode integer,
+    tdncode integer,
+    breedteklasse breedteklassewatertype,
+    functie functiewatertype,
+    hoofdafwatering hoofdafwateringtype,
+    hoogteniveau integer,
+    status statustype,
+    typeinfrastructuurwaterdeel typeinfrastructuurwaterdeeltype,
+    typewater typewatertype,
+    voorkomenwater voorkomenwatertype,
+    naamfries character varying(50),
+    naamnl character varying(50),
+    fysiekvoorkomen fysiekvoorkomenwatertype
+);
+SELECT AddGeometryColumn( 'public', 'waterdeel_lijn', 'wkb_geometry', 28992, 'LINESTRING', 2 );
+
+INSERT INTO waterdeel_lijn( gml_id, identificatie, dimensie, visualisatiecode, tdncode, breedteklasse, functie, hoofdafwatering, hoogteniveau, status, typeinfrastructuurwaterdeel, typewater, voorkomenwater, naamfries, naamnl, fysiekvoorkomen, wkb_geometry )
+SELECT
+    gml_id,
+    identificatie,
+    dimensie,
+    visualisatiecode,
+    tdncode,
+    breedteklasse,
+    functie,
+    hoofdafwatering,
+    hoogteniveau,
+    status,
+    typeinfrastructuurwaterdeel,
+    typewater,
+    voorkomenwater,
+    naamfries,
+    naamnl,
+    fysiekvoorkomen,
+    wkb_geometry
+FROM
+    waterdeel
+WHERE
+    GeometryType(wkb_geometry) = 'LINESTRING'
+;
+
+
+CREATE SEQUENCE waterdeel_punt_seq;
+CREATE TABLE waterdeel_punt (
+    ogc_fid integer NOT NULL DEFAULT nextval('waterdeel_punt_seq'),
+    gml_id character varying(1),
+    identificatie character varying(20),
+    dimensie dimensietype,
+    visualisatiecode integer,
+    tdncode integer,
+    breedteklasse breedteklassewatertype,
+    functie functiewatertype,
+    hoofdafwatering hoofdafwateringtype,
+    hoogteniveau integer,
+    status statustype,
+    typeinfrastructuurwaterdeel typeinfrastructuurwaterdeeltype,
+    typewater typewatertype,
+    voorkomenwater voorkomenwatertype,
+    naamfries character varying(50),
+    naamnl character varying(50),
+    fysiekvoorkomen fysiekvoorkomenwatertype
+);
+SELECT AddGeometryColumn( 'public', 'waterdeel_punt', 'wkb_geometry', 28992, 'POINT', 2 );
+
+INSERT INTO waterdeel_punt( gml_id, identificatie, dimensie, visualisatiecode, tdncode, breedteklasse, functie, hoofdafwatering, hoogteniveau, status, typeinfrastructuurwaterdeel, typewater, voorkomenwater, naamfries, naamnl, fysiekvoorkomen, wkb_geometry )
+SELECT
+    gml_id,
+    identificatie,
+    dimensie,
+    visualisatiecode,
+    tdncode,
+    breedteklasse,
+    functie,
+    hoofdafwatering,
+    hoogteniveau,
+    status,
+    typeinfrastructuurwaterdeel,
+    typewater,
+    voorkomenwater,
+    naamfries,
+    naamnl,
+    fysiekvoorkomen,
+    wkb_geometry
+FROM
+    waterdeel
+WHERE
+    GeometryType(wkb_geometry) = 'POINT'
+;
+
+
+CREATE SEQUENCE waterdeel_vlak_seq;
+CREATE TABLE waterdeel_vlak (
+    ogc_fid integer NOT NULL DEFAULT nextval('waterdeel_vlak_seq'),
+    gml_id character varying(1),
+    identificatie character varying(20),
+    dimensie dimensietype,
+    visualisatiecode integer,
+    tdncode integer,
+    breedteklasse breedteklassewatertype,
+    functie functiewatertype,
+    hoofdafwatering hoofdafwateringtype,
+    hoogteniveau integer,
+    status statustype,
+    typeinfrastructuurwaterdeel typeinfrastructuurwaterdeeltype,
+    typewater typewatertype,
+    voorkomenwater voorkomenwatertype,
+    naamfries character varying(50),
+    naamnl character varying(50),
+    fysiekvoorkomen fysiekvoorkomenwatertype
+);
+SELECT AddGeometryColumn( 'public', 'waterdeel_vlak', 'wkb_geometry', 28992, 'POLYGON', 2 );
+
+INSERT INTO waterdeel_vlak( gml_id, identificatie, dimensie, visualisatiecode, tdncode, breedteklasse, functie, hoofdafwatering, hoogteniveau, status, typeinfrastructuurwaterdeel, typewater, voorkomenwater, naamfries, naamnl, fysiekvoorkomen, wkb_geometry )
+SELECT
+    gml_id,
+    identificatie,
+    dimensie,
+    visualisatiecode,
+    tdncode,
+    breedteklasse,
+    functie,
+    hoofdafwatering,
+    hoogteniveau,
+    status,
+    typeinfrastructuurwaterdeel,
+    typewater,
+    voorkomenwater,
+    naamfries,
+    naamnl,
+    fysiekvoorkomen,
+    wkb_geometry
+FROM
+    waterdeel
+WHERE
+    GeometryType(wkb_geometry) = 'POLYGON'
+;
+
+
+CREATE INDEX waterdeel_vlak_idx ON waterdeel_vlak USING gist (wkb_geometry);
+CREATE INDEX waterdeel_lijn_idx ON waterdeel_lijn USING gist (wkb_geometry);
+CREATE INDEX waterdeel_punt_idx ON waterdeel_punt USING gist (wkb_geometry);
+
+
+
+
+
+--
+-- Split inrichtings element in sub tables on the geometry type
+--
+
+
+CREATE SEQUENCE wegdeel_vlak_seq;
+CREATE TABLE wegdeel_vlak (
+    ogc_fid integer NOT NULL DEFAULT nextval('wegdeel_vlak_seq'),
+    gml_id character varying(1),
+    identificatie character varying(20),
+    dimensie dimensietype,
+    visualisatiecode integer,
+    tdncode integer,
+    gescheidenrijbaan gescheidenrijbaantype,
+    hoofdverkeersgebruik hoofdverkeersgebruiktype,
+    hoogteniveau integer,
+    status statustype,
+    straatnaamfries character varying(50),
+    typeinfrastructuurwegdeel typeinfrastructuurwegdeeltype,
+    typeweg typewegtype,
+    verhardingsbreedteklasse breedteklasseverhardingtype,
+    verhardingstype typeverhardingtype,
+    fysiekvoorkomen fysiekvoorkomenwegtype,
+    straatnaamnl character varying(50),
+    nwegnummer character varying(10),
+    brugnaam character varying(17),
+    aantalrijstroken integer
+);
+SELECT AddGeometryColumn( 'public', 'wegdeel_vlak', 'wkb_geometry', 28992, 'POLYGON', 2 );
+
+INSERT INTO wegdeel_vlak( gml_id, identificatie, dimensie, visualisatiecode, tdncode, gescheidenrijbaan, hoofdverkeersgebruik, hoogteniveau, status, straatnaamfries, typeinfrastructuurwegdeel, typeweg, verhardingsbreedteklasse, verhardingstype, fysiekvoorkomen, straatnaamnl, nwegnummer, brugnaam, aantalrijstroken, wkb_geometry)
+SELECT
+    gml_id, identificatie, dimensie, visualisatiecode, tdncode, gescheidenrijbaan, hoofdverkeersgebruik, hoogteniveau, status, straatnaamfries, typeinfrastructuurwegdeel, typeweg, verhardingsbreedteklasse, verhardingstype, fysiekvoorkomen, straatnaamnl, nwegnummer, brugnaam, aantalrijstroken, wkb_geometry
+FROM
+    wegdeel
+WHERE
+    GeometryType(wkb_geometry) = 'POLYGON'
+;
+
+
+
+CREATE SEQUENCE wegdeel_lijn_seq;
+CREATE TABLE wegdeel_lijn (
+    ogc_fid integer NOT NULL DEFAULT nextval('wegdeel_lijn_seq'),
+    gml_id character varying(1),
+    identificatie character varying(20),
+    dimensie dimensietype,
+    visualisatiecode integer,
+    tdncode integer,
+    gescheidenrijbaan gescheidenrijbaantype,
+    hoofdverkeersgebruik hoofdverkeersgebruiktype,
+    hoogteniveau integer,
+    status statustype,
+    straatnaamfries character varying(50),
+    typeinfrastructuurwegdeel typeinfrastructuurwegdeeltype,
+    typeweg typewegtype,
+    verhardingsbreedteklasse breedteklasseverhardingtype,
+    verhardingstype typeverhardingtype,
+    fysiekvoorkomen fysiekvoorkomenwegtype,
+    straatnaamnl character varying(50),
+    nwegnummer character varying(10),
+    brugnaam character varying(17),
+    aantalrijstroken integer
+);
+SELECT AddGeometryColumn( 'public', 'wegdeel_lijn', 'wkb_geometry', 28992, 'LINESTRING', 2 );
+
+INSERT INTO wegdeel_lijn( gml_id, identificatie, dimensie, visualisatiecode, tdncode, gescheidenrijbaan, hoofdverkeersgebruik, hoogteniveau, status, straatnaamfries, typeinfrastructuurwegdeel, typeweg, verhardingsbreedteklasse, verhardingstype, fysiekvoorkomen, straatnaamnl, nwegnummer, brugnaam, aantalrijstroken, wkb_geometry)
+SELECT
+    gml_id, identificatie, dimensie, visualisatiecode, tdncode, gescheidenrijbaan, hoofdverkeersgebruik, hoogteniveau, status, straatnaamfries, typeinfrastructuurwegdeel, typeweg, verhardingsbreedteklasse, verhardingstype, fysiekvoorkomen, straatnaamnl, nwegnummer, brugnaam, aantalrijstroken, wkb_geometry
+FROM
+    wegdeel
+WHERE
+    GeometryType(wkb_geometry) = 'LINESTRING'
+;
+
+
+CREATE SEQUENCE wegdeel_punt_seq;
+CREATE TABLE wegdeel_punt (
+    ogc_fid integer NOT NULL DEFAULT nextval('wegdeel_punt_seq'),
+    gml_id character varying(1),
+    identificatie character varying(20),
+    dimensie dimensietype,
+    visualisatiecode integer,
+    tdncode integer,
+    gescheidenrijbaan gescheidenrijbaantype,
+    hoofdverkeersgebruik hoofdverkeersgebruiktype,
+    hoogteniveau integer,
+    status statustype,
+    straatnaamfries character varying(50),
+    typeinfrastructuurwegdeel typeinfrastructuurwegdeeltype,
+    typeweg typewegtype,
+    verhardingsbreedteklasse breedteklasseverhardingtype,
+    verhardingstype typeverhardingtype,
+    fysiekvoorkomen fysiekvoorkomenwegtype,
+    straatnaamnl character varying(50),
+    nwegnummer character varying(10),
+    brugnaam character varying(17),
+    aantalrijstroken integer
+);
+SELECT AddGeometryColumn( 'public', 'wegdeel_punt', 'wkb_geometry', 28992, 'POINT', 2 );
+
+INSERT INTO wegdeel_punt( gml_id, identificatie, dimensie, visualisatiecode, tdncode, gescheidenrijbaan, hoofdverkeersgebruik, hoogteniveau, status, straatnaamfries, typeinfrastructuurwegdeel, typeweg, verhardingsbreedteklasse, verhardingstype, fysiekvoorkomen, straatnaamnl, nwegnummer, brugnaam, aantalrijstroken, wkb_geometry)
+SELECT
+    gml_id, identificatie, dimensie, visualisatiecode, tdncode, gescheidenrijbaan, hoofdverkeersgebruik, hoogteniveau, status, straatnaamfries, typeinfrastructuurwegdeel, typeweg, verhardingsbreedteklasse, verhardingstype, fysiekvoorkomen, straatnaamnl, nwegnummer, brugnaam, aantalrijstroken, wkb_geometry
+FROM
+    wegdeel
+WHERE
+    GeometryType(wkb_geometry) = 'POINT'
+;
+
+
+
+CREATE INDEX wegdeel_vlak_idx ON wegdeel_vlak USING gist (wkb_geometry);
+CREATE INDEX wegdeel_lijn_idx ON wegdeel_lijn USING gist (wkb_geometry);
+CREATE INDEX wegdeel_punt_idx ON wegdeel_punt USING gist (wkb_geometry);
+
+
+
+
+
+
+
+
+
+--
+-- Split spoorbaandeel  in sub tables on the geometry type
+--
+
+CREATE SEQUENCE spoorbaandeel_lijn_seq;
+CREATE TABLE spoorbaandeel_lijn (
+    ogc_fid integer NOT NULL DEFAULT nextval('spoorbaandeel_lijn_seq'),
+    gml_id character varying(1),
+    identificatie character varying(20),
+    dimensie dimensietype,
+    visualisatiecode integer,
+    tdncode integer,
+    aantalsporen integer,
+    elektrificatie elektrificatiespoortype,
+    hoogteniveau integer,
+    spoorbreedte spoorbreedtetype,
+    status statustype,
+    typeinfrastructuurspoorbaandeel typeinfrastructuurspoorbaandeeltype,
+    typespoorbaan typespoorbaantype,
+    vervoerfunctie vervoerfunctiespoortype, 
+    fysiekvoorkomen fysiekvoorkomenspoortype 
+);
+SELECT AddGeometryColumn( 'public', 'spoorbaandeel_lijn', 'wkb_geometry', 28992, 'LINESTRING', 2 );
+
+
+INSERT INTO spoorbaandeel_lijn( gml_id, identificatie, dimensie, visualisatiecode, tdncode, aantalsporen, elektrificatie, hoogteniveau, spoorbreedte, status, typeinfrastructuurspoorbaandeel, typespoorbaan, vervoerfunctie, fysiekvoorkomen, wkb_geometry)
+SELECT
+    gml_id,
+    identificatie,
+    dimensie,
+    visualisatiecode,
+    tdncode,
+    aantalsporen,
+    elektrificatie,
+    hoogteniveau,
+    spoorbreedte,
+    status,
+    typeinfrastructuurspoorbaandeel,
+    typespoorbaan,
+    vervoerfunctie,
+    fysiekvoorkomen,
+    wkb_geometry
+FROM
+    spoorbaandeel
+WHERE
+    GeometryType(wkb_geometry) = 'LINESTRING';
+;
+
+
+
+CREATE SEQUENCE spoorbaandeel_punt_seq;
+CREATE TABLE spoorbaandeel_punt (
+    ogc_fid integer NOT NULL DEFAULT nextval('spoorbaandeel_punt_seq'),
+    gml_id character varying(1),
+    identificatie character varying(20),
+    dimensie dimensietype,
+    visualisatiecode integer,
+    tdncode integer,
+    aantalsporen integer,
+    elektrificatie elektrificatiespoortype,
+    hoogteniveau integer,
+    spoorbreedte spoorbreedtetype,
+    status statustype,
+    typeinfrastructuurspoorbaandeel typeinfrastructuurspoorbaandeeltype,
+    typespoorbaan typespoorbaantype,
+    vervoerfunctie vervoerfunctiespoortype, 
+    fysiekvoorkomen fysiekvoorkomenspoortype 
+);
+SELECT AddGeometryColumn( 'public', 'spoorbaandeel_punt', 'wkb_geometry', 28992, 'POINT', 2 );
+
+INSERT INTO spoorbaandeel_punt( gml_id, identificatie, dimensie, visualisatiecode, tdncode, aantalsporen, elektrificatie, hoogteniveau, spoorbreedte, status, typeinfrastructuurspoorbaandeel, typespoorbaan, vervoerfunctie, fysiekvoorkomen, wkb_geometry)
+SELECT
+    gml_id,
+    identificatie,
+    dimensie,
+    visualisatiecode,
+    tdncode,
+    aantalsporen,
+    elektrificatie,
+    hoogteniveau,
+    spoorbreedte,
+    status,
+    typeinfrastructuurspoorbaandeel,
+    typespoorbaan,
+    vervoerfunctie,
+    fysiekvoorkomen,
+    wkb_geometry
+FROM
+    spoorbaandeel
+WHERE
+    GeometryType(wkb_geometry) = 'POINT';
+;
+
+CREATE INDEX spoorbaandeel_lijn_idx ON spoorbaandeel_lijn USING gist (wkb_geometry);
+CREATE INDEX spoorbaandeel_punt_idx ON spoorbaandeel_punt USING gist (wkb_geometry);
+
+
+VACUUM ANALYZE wegdeel_vlak ;
+VACUUM ANALYZE wegdeel_lijn ;
+VACUUM ANALYZE wegdeel_punt ;
+
+VACUUM ANALYZE waterdeel_vlak ;
+VACUUM ANALYZE waterdeel_lijn ;
+VACUUM ANALYZE waterdeel_punt ;
+
+VACUUM ANALYZE inrichtingselement_lijn;
+VACUUM ANALYZE inrichtingselement_punt;
+
+VACUUM ANALYZE spoorbaandeel_lijn;
+VACUUM ANALYZE spoorbaandeel_punt;

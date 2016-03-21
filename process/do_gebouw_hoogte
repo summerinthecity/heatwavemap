@@ -1,0 +1,65 @@
+CREATE TABLE gebouw_hoogte (
+         ogc_fid   integer primary key,
+         count     bigint             ,
+         sum       double precision   ,
+         mean      double precision   ,
+         stddev    double precision   ,
+         min       double precision   ,
+         max       double precision   ,
+         processed boolean
+);
+
+INSERT INTO gebouw_hoogte (ogc_fid, processed)
+SELECT ogc_fid, FALSE as processed FROM gebouw
+;
+
+
+-- Keep calling this until all buildings are done
+UPDATE gebouw_hoogte 
+SET
+        count    =foo.count,
+        sum      =foo.sum,
+        mean     =foo.mean,
+        stddev   =foo.stddev,
+        min      =foo.min,
+        max      =foo.max,
+        processed=TRUE
+FROM (
+        SELECT 
+               ogc_fid,
+               (ST_SummaryStats( r )).*
+        FROM (
+                SELECT ogc_fid,
+                ST_Union(ST_Clip(rast,wkb_geometry)) AS r
+                FROM
+                ohn,
+                gebouw,
+                ( SELECT ogc_fid AS todo FROM gebouw_hoogte WHERE processed=FALSE LIMIT 100 ) AS foo
+                WHERE
+                        ST_Intersects(wkb_geometry, rast)
+                AND
+                        ogc_fid=todo
+                GROUP BY
+                        ogc_fid
+        ) AS foo
+) AS foo
+WHERE
+        gebouw_hoogte.ogc_fid = foo.ogc_fid;
+
+
+
+-- Set remaining gebouw to 0
+UPDATE gebouw_hoogte 
+SET
+        count    =0,
+        sum      =0,
+        mean     =0,
+        stddev   =0,
+        min      =0,
+        max      =0,
+        processed=TRUE
+FROM (
+        SELECT ogc_fid, FROM gebouw_hoogte WHERE processed=FALSE 
+     ) AS foo
+WHERE
+        gebouw_hoogte.ogc_fid = foo.ogc_fid;

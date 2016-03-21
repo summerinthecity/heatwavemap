@@ -1,0 +1,58 @@
+-- Helper function that iterates over the raster and calls the 'urbfunc' for each pixel.
+-- Result is scaled and stored in band number 'urbband'.
+-- arguments:  urbfunc, string     function to call
+--             urbtable, string    table to receive the results. Should contain rast raster, rid integer, processed boolean
+--             urbrid, integer     raster id to set
+--             urbband, integer    band id to set
+--             scale, double precision scale factor
+--
+CREATE OR REPLACE FUNCTION make_urb_param(urbfunc varchar, urbtable varchar, urbrid integer, urbband integer, scale double precision) RETURNS varchar 
+AS $$
+
+DECLARE
+    x      integer;
+    nx     integer;
+    y      integer;
+    ny     integer;
+    geom   geometry;
+    val    double precision;
+    band   integer[][]; 
+
+BEGIN
+    -- get raster size
+    EXECUTE 'SELECT ST_Width( rast ),ST_Height( rast ) FROM '
+            || urbtable
+            || ' WHERE rid = '
+            || urbrid
+    INTO nx,ny ; 
+
+    -- initialize new band
+    band := array_fill(0, ARRAY[ny,nx]);
+
+    FOR y IN 1..ny LOOP
+
+        FOR x IN 1..nx LOOP
+
+            -- get the pixel as a geometry
+            EXECUTE 'SELECT ST_PixelAsPolygon( rast, ' || x || ' , ' || y || ' ) FROM ' || urbtable || ' WHERE rid = ' || urbrid
+            INTO geom ;
+
+            EXECUTE 'SELECT ' || urbfunc || ' ( ' || quote_literal( ST_AsEWKT(geom) ) || '::geometry  ) '
+            INTO val ;
+
+            band[y][x] := round(scale * val) ;
+            -- RAISE NOTICE 'x% y% = %',x ,y, val;
+
+        END LOOP;
+
+        -- RAISE NOTICE 'Progress %/%', y, ny;
+
+    END LOOP;
+
+    -- Write band to urb table
+    EXECUTE 'UPDATE ' || urbtable || ' SET rast = ST_SetValues( rast, ' || urbband || ', 1, 1, ' || quote_literal(band) || ' ), processed = TRUE ' || ' WHERE rid = ' || urbrid ; 
+
+RETURN
+    urbfunc ;
+END;
+$$ LANGUAGE plpgsql;

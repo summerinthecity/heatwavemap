@@ -1,0 +1,1371 @@
+CREATE EXTENSION postgis ; 
+
+CREATE TYPE fysiekvoorkomenwegtype AS ENUM ( 
+  'op vast deel van brug', 'op beweegbaar deel van brug', 'overkluisd', 'in tunnel', 'als veer/pont' );
+
+CREATE TYPE typeverhardingtype AS ENUM ( 
+  'verhard', 'half verhard', 'onverhard', 'onbekend' );
+
+CREATE TYPE hoofdverkeersgebruiktype AS ENUM ( 
+  'vliegverkeer', 'snelverkeer', 'busverkeer', 'gemengd verkeer', 'fietsers, bromfietsers', 'voetgangers', 'ruiters', 'parkeren', 'parkeren: carpoolplaats', 'parkeren: P+R parkeerplaats', 'overig', 'onbekend' );
+
+CREATE TYPE typewegtype AS ENUM ( 
+  'startbaan, landingsbaan', 'rolbaan, platform', 'autosnelweg', 'hoofdweg', 'regionale weg', 'lokale weg', 'straat', 'overig', 'onbekend' );
+
+CREATE TYPE breedteklasseverhardingtype AS ENUM ( 
+  '> 7 meter', '4 - 7 meter', '2 - 4 meter', '< 2 meter' );
+
+CREATE TYPE gescheidenrijbaantype AS ENUM ( 
+  'ja', 'nee' );
+
+CREATE TYPE typeinfrastructuurwegdeeltype AS ENUM ( 
+  'verbinding', 'kruising', 'overig verkeersgebied' );
+
+CREATE TYPE typefunctioneelgebiedtype AS ENUM ( 
+  'arboretum', 'bedrijventerrein', 'begraafplaats', 'boswachterij', 'bungalowpark', 'camping, kampeerterrein', 'caravanpark', 'circuit', 'crossbaan', 'dierentuin, safaripark', 'eendenkooi', 'emplacement', 'erebegraafplaats', 'gaswinning', 'gebied met hoge objecten', 'gebouwencomplex', 'golfterrein', 'grafheuvel', 'grindwinning', 'groeve', 'haven', 'heemtuin', 'helikopterlandingsterrein', 'ijsbaan', 'infiltratiegebied', 'jachthaven', 'kartingbaan', 'kazerne, legerplaats', 'landgoed', 'mijn', 'mijnsteenberg', 'militair oefengebied, schietterrein', 'mosselbank', 'natuurgebied, natuurreservaat', 'oliewinning', 'onbekend', 'openluchtmuseum', 'openluchttheater', 'park', 'pinetum', 'plantsoen', 'productie-installatie', 'recreatiegebied', 'renbaan', 'skibaan', 'slipschool', 'sluizencomplex', 'sportterrein, sportcomplex', 'stortplaats', 'tankbaan', 'tennispark', 'transformatorstation', 'tuincentrum', 'verzorgingsplaats', 'viskwekerij', 'vliegveld, luchthaven', 'volkstuinen', 'werf', 'wildwissel', 'windturbinepark', 'woonwagencentrum', 'zandwinning', 'zenderpark', 'zoutwinning', 'zuiveringsinstallatie', 'zweefvliegveldterrein', 'zwembad complex' );
+
+CREATE TYPE dimensietype AS ENUM ( 
+  '2D', '3D' );
+
+CREATE TYPE brontypetype AS ENUM ( 
+  'GBKN', 'kaart', 'luchtfoto', 'overig', 'RD', 'top10vector' );
+
+CREATE TYPE statustype AS ENUM ( 
+  'buiten gebruik', 'in gebruik', 'onbekend', 'realisatie: in uitvoering', 'realisatie: nog niet in uitvoering' );
+
+CREATE TYPE typewatertype AS ENUM ( 
+  'bron, wel', 'droogvallend', 'greppel, droge sloot', 'meer, plas, ven, vijver', 'onbekend', 'waterloop', 'zee' );
+
+CREATE TYPE fysiekvoorkomenwatertype AS ENUM ( 
+  'in afsluitbare duiker', 'in afsluitbare grondduiker', 'in duiker', 'in grondduiker', 'in sluis', 'op brug', 'overkluisd' );
+
+CREATE TYPE stroomrichtingtype AS ENUM ( 
+  'eenrichting', 'stilstaand', 'twee richtingen (getijde invloed)' );
+
+CREATE TYPE breedteklassewatertype AS ENUM ( 
+  '> 6 meter', '0,5 - 3 meter', '3 - 6 meter' );
+
+CREATE TYPE functiewatertype AS ENUM ( 
+  'drinkwaterbekken', 'haven', 'natuurbad', 'onbekend', 'overig', 'viskwekerij', 'vistrap', 'vloeiveld', 'waterval', 'waterzuivering', 'zwembad' );
+
+CREATE TYPE voorkomenwatertype AS ENUM ( 
+  'met riet', 'overig' );
+
+CREATE TYPE hoofdafwateringtype AS ENUM ( 
+  'ja', 'nee' );
+
+CREATE TYPE typeinfrastructuurwaterdeeltype AS ENUM ( 
+  'kruising', 'overig watergebied', 'verbinding' );
+
+CREATE TYPE voorkomenterreintype AS ENUM ( 
+  'dras, moerassig', 'met riet' );
+
+CREATE TYPE fysiekvoorkomenterreintype AS ENUM ( 
+  'in tunnel', 'op brug', 'overkluisd' );
+
+CREATE TYPE typelandgebruiktype AS ENUM ( 
+  'aanlegsteiger', 'akkerland', 'basaltblokken, steenglooiing', 'bebouwd gebied', 'boomgaard', 'boomkwekerij', 'bos: gemengd bos', 'bos: griend', 'bos: loofbos', 'bos: naaldbos', 'dodenakker', 'dodenakker met bos', 'fruitkwekerij', 'grasland', 'heide', 'laadperron', 'onbekend', 'overig', 'populieren', 'spoorbaanlichaam', 'zand' );
+
+CREATE TYPE typegebouwtype AS ENUM ( 
+  'bezoekerscentrum', 'brandtoren', 'bunker', 'crematorium', 'deelraadsecretarie', 'dok', 'elektriciteitscentrale', 'fabriek', 'fort', 'gascompressiestation', 'gemaal', 'gemeentehuis', 'gevangenis', 'grenskantoor', 'hotel', 'huizenblok', 'hulpsecretarie', 'kapel', 'kas, warenhuis', 'kasteel', 'kerk', 'kerncentrale, kernreactor', 'kliniek, inrichting, sanatorium', 'klokkentoren', 'klooster, abdij', 'koeltoren', 'koepel', 'kunstijsbaan', 'lichttoren', 'luchtwachttoren', 'manege', 'metrostation', 'militair gebouw', 'motel', 'museum', 'overig', 'parkeerdak, parkeerdek, parkeergarage', 'peilmeetstation', 'politiebureau', 'pompstation', 'postkantoor', 'psychiatrisch ziekenhuis, psychiatrisch centrum', 'radarpost', 'radartoren', 'radiotoren, televisietoren', 'recreatiecentrum', 'reddingboothuisje', 'reddinghuisje, schuilhut', 'religieus gebouw', 'remise', 'ruïne', 'schaapskooi', 'school', 'schoorsteen', 'sporthal', 'stadion', 'stadskantoor', 'tank', 'tankstation', 'telecommunicatietoren', 'toren', 'transformatorstation', 'treinstation', 'uitzichttoren', 'universiteit', 'veiling', 'verkeerstoren', 'vuurtoren', 'waterradmolen', 'watertoren', 'wegenwachtstation', 'wegrestaurant', 'werf', 'windmolen', 'windmolen: korenmolen', 'windmolen: watermolen', 'windturbine', 'zendtoren', 'ziekenhuis', 'zwembad' );
+
+CREATE TYPE hoogteklassegebouwtype AS ENUM ( 
+  'hoogbouw', 'laagbouw', 'onbekend' );
+
+CREATE TYPE typeinrichtingselementtype AS ENUM ( 
+  'aanlegsteiger', 'baak', 'bomenrij', 'boom', 'boorput', 'boortoren', 'BOS-pomp', 'brandtoren', 'dam, koedam', 'dukdalf', 'gaswinning', 'gedenkteken, monument', 'geluidswering', 'gemaal', 'golfmeetpaal', 'GPS kernnetpunt', 'grenspunt', 'heg, haag', 'hekwerk', 'helikopterlandingsplatform', 'hoogspanningsleiding', 'hoogspanningsmast', 'hunebed', 'kaap', 'kabelbaan', 'kabelbaanmast', 'kapel', 'kilometerpaal', 'kilometerpaal spoorweg', 'kilometerpaal water', 'kilometerraaibord', 'kilometerraaipaal', 'koeltoren', 'koepel', 'kogelvanger schietbaan', 'kraan', 'kruis', 'laadperron', 'leiding', 'licht, lichtopstand', 'lichttoren', 'luchtvaartlicht', 'markant object', 'muur', 'oliepompinstallatie', 'onbekend', 'overig', 'paal', 'paalwerk', 'peilmeetstation', 'peilschaal', 'pijler', 'radarpost', 'radiobaken', 'radiotelescoop', 'RD punt', 'schietbaan', 'schoorsteen', 'seinmast', 'sluisdeur', 'station', 'stormvloedkering', 'strandpaal', 'strekdam, krib, golfbreker', 'stuw', 'tol', 'toren', 'uitzichttoren', 'verkeersgeleider', 'visplaats', 'vlampijp', 'wegafsluiting', 'wegwijzer', 'windmolen', 'windmolen: korenmolen', 'windmolen: watermolen', 'windmolentje', 'windturbine', 'zeevaartlicht', 'zendmast', 'zichtbaar wrak' );
+
+CREATE TYPE typespoorbaantype AS ENUM ( 
+  'gemengd', 'metro', 'tram', 'trein' );
+
+CREATE TYPE vervoerfunctiespoortype AS ENUM ( 
+  'gemengd gebruik', 'goederenvervoer', 'museumlijn', 'personenvervoer' );
+
+CREATE TYPE fysiekvoorkomenspoortype AS ENUM ( 
+  'in tunnel', 'op beweegbaar deel van brug', 'op vast deel van brug', 'overkluisd' );
+
+CREATE TYPE spoorbreedtetype AS ENUM ( 
+  'gemengd', 'normaalspoor', 'smalspoor' );
+
+CREATE TYPE elektrificatiespoortype AS ENUM ( 
+  'geëlektrificeerd', 'gemengd', 'niet geëlektrificeerd' );
+
+CREATE TYPE typeinfrastructuurspoorbaandeeltype AS ENUM ( 
+  'kruising', 'verbinding' );
+
+CREATE TYPE typegeografischgebiedtype AS ENUM ( 
+  'bank, ondiepte, plaat', 'bosgebied', 'buurtschap', 'duingebied', 'eiland', 'geul, vaargeul', 'heidegebied', 'heuvel, berg', 'huizengroep', 'kaap, hoek', 'meer, plas, ven, vijver', 'onbekend', 'overig', 'plaats, bewoond oord', 'polder', 'streek, veld', 'terp', 'vliedberg', 'wad', 'woonwijk', 'zee', 'zeegat, zeearm' );
+
+CREATE TYPE typeregistratiefgebiedtype AS ENUM ( 
+  'Bundesland', 'buurt', 'gemeente', 'Kreis', 'land', 'nationaal park', 'provincie', 'Regierungsbezirk', 'stadsdeel', 'waterschap', 'wijk' );
+
+CREATE TYPE typerelieftype AS ENUM ( 
+  'dieptelijn', 'dieptepunt', 'hoogtelijn', 'hoogtepunt', 'kade, wal', 'laagwaterlijn', 'onbekend', 'peil', 'peil: winterpeil', 'peil: zomerpeil', 'steile rand, aardrand', 'talud, hoogteverschil' );
+
+CREATE TYPE functierelieftype AS ENUM ( 
+  'geluid weren' );
+
+CREATE TYPE hoogteklasserelieftype AS ENUM ( 
+  '> 1 meter', '> 2,5 meter', '1 - 2,5 meter' );
+
+--
+-- PostgreSQL database dump
+--
+
+SET statement_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+SET search_path = public, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: functioneelgebied; Type: TABLE; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE TABLE functioneelgebied (
+    ogc_fid integer NOT NULL,
+    wkb_geometry geometry(Point,28992),
+    gml_id character varying(1),
+    identificatie character varying(20),
+    brontype brontypetype,
+    bronbeschrijving character varying,
+    bronactualiteit date,
+    bronnauwkeurigheid double precision,
+    dimensie dimensietype,
+    visualisatiecode integer,
+    tdncode integer,
+    typefunctioneelgebied typefunctioneelgebiedtype,
+    naamnl character varying(50),
+    naamfries character varying(50)
+);
+
+
+ALTER TABLE public.functioneelgebied OWNER TO jiska;
+
+--
+-- Name: functioneelgebied_ogc_fid_seq; Type: SEQUENCE; Schema: public; Owner: jiska
+--
+
+CREATE SEQUENCE functioneelgebied_ogc_fid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.functioneelgebied_ogc_fid_seq OWNER TO jiska;
+
+--
+-- Name: functioneelgebied_ogc_fid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: jiska
+--
+
+ALTER SEQUENCE functioneelgebied_ogc_fid_seq OWNED BY functioneelgebied.ogc_fid;
+
+
+--
+-- Name: ogc_fid; Type: DEFAULT; Schema: public; Owner: jiska
+--
+
+ALTER TABLE ONLY functioneelgebied ALTER COLUMN ogc_fid SET DEFAULT nextval('functioneelgebied_ogc_fid_seq'::regclass);
+
+
+--
+-- Name: functioneelgebied_pkey; Type: CONSTRAINT; Schema: public; Owner: jiska; Tablespace: 
+--
+
+ALTER TABLE ONLY functioneelgebied
+    ADD CONSTRAINT functioneelgebied_pkey PRIMARY KEY (ogc_fid);
+
+
+--
+-- Name: functioneelgebied_geom_idx; Type: INDEX; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE INDEX functioneelgebied_geom_idx ON functioneelgebied USING gist (wkb_geometry);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+--
+-- PostgreSQL database dump
+--
+
+SET statement_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+SET search_path = public, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: gebouw; Type: TABLE; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE TABLE gebouw (
+    ogc_fid integer NOT NULL,
+    wkb_geometry geometry(Polygon,28992),
+    gml_id character varying(1),
+    identificatie character varying(20),
+    brontype brontypetype,
+    bronbeschrijving character varying,
+    bronactualiteit date,
+    bronnauwkeurigheid double precision,
+    dimensie dimensietype,
+    visualisatiecode integer,
+    tdncode integer,
+    hoogteklasse hoogteklassegebouwtype,
+    hoogteniveau integer,
+    status statustype,
+    typegebouw typegebouwtype,
+    naamfries character varying(50),
+    naamnl character varying(50)
+);
+
+
+ALTER TABLE public.gebouw OWNER TO jiska;
+
+--
+-- Name: gebouw_ogc_fid_seq; Type: SEQUENCE; Schema: public; Owner: jiska
+--
+
+CREATE SEQUENCE gebouw_ogc_fid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.gebouw_ogc_fid_seq OWNER TO jiska;
+
+--
+-- Name: gebouw_ogc_fid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: jiska
+--
+
+ALTER SEQUENCE gebouw_ogc_fid_seq OWNED BY gebouw.ogc_fid;
+
+
+--
+-- Name: ogc_fid; Type: DEFAULT; Schema: public; Owner: jiska
+--
+
+ALTER TABLE ONLY gebouw ALTER COLUMN ogc_fid SET DEFAULT nextval('gebouw_ogc_fid_seq'::regclass);
+
+
+--
+-- Name: gebouw_pkey; Type: CONSTRAINT; Schema: public; Owner: jiska; Tablespace: 
+--
+
+ALTER TABLE ONLY gebouw
+    ADD CONSTRAINT gebouw_pkey PRIMARY KEY (ogc_fid);
+
+
+--
+-- Name: gebouw_geom_idx; Type: INDEX; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE INDEX gebouw_geom_idx ON gebouw USING gist (wkb_geometry);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+--
+-- PostgreSQL database dump
+--
+
+SET statement_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+SET search_path = public, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: geografischgebied; Type: TABLE; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE TABLE geografischgebied (
+    ogc_fid integer NOT NULL,
+    wkb_geometry geometry(Point,28992),
+    gml_id character varying(1),
+    identificatie character varying(20),
+    brontype brontypetype,
+    bronbeschrijving character varying,
+    bronactualiteit date,
+    bronnauwkeurigheid double precision,
+    dimensie dimensietype,
+    visualisatiecode integer,
+    tdncode integer,
+    naamnl character varying(50),
+    typegeografischgebied typegeografischgebiedtype,
+    naamfries character varying(50)
+);
+
+
+ALTER TABLE public.geografischgebied OWNER TO jiska;
+
+--
+-- Name: geografischgebied_ogc_fid_seq; Type: SEQUENCE; Schema: public; Owner: jiska
+--
+
+CREATE SEQUENCE geografischgebied_ogc_fid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.geografischgebied_ogc_fid_seq OWNER TO jiska;
+
+--
+-- Name: geografischgebied_ogc_fid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: jiska
+--
+
+ALTER SEQUENCE geografischgebied_ogc_fid_seq OWNED BY geografischgebied.ogc_fid;
+
+
+--
+-- Name: ogc_fid; Type: DEFAULT; Schema: public; Owner: jiska
+--
+
+ALTER TABLE ONLY geografischgebied ALTER COLUMN ogc_fid SET DEFAULT nextval('geografischgebied_ogc_fid_seq'::regclass);
+
+
+--
+-- Name: geografischgebied_pkey; Type: CONSTRAINT; Schema: public; Owner: jiska; Tablespace: 
+--
+
+ALTER TABLE ONLY geografischgebied
+    ADD CONSTRAINT geografischgebied_pkey PRIMARY KEY (ogc_fid);
+
+
+--
+-- Name: geografischgebied_geom_idx; Type: INDEX; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE INDEX geografischgebied_geom_idx ON geografischgebied USING gist (wkb_geometry);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+--
+-- PostgreSQL database dump
+--
+
+SET statement_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+SET search_path = public, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: hoogteofdieptepunt; Type: TABLE; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE TABLE hoogteofdieptepunt (
+    ogc_fid integer NOT NULL,
+    wkb_geometry geometry(Point,28992),
+    gml_id character varying(1),
+    identificatie character varying(20),
+    brontype brontypetype,
+    bronbeschrijving character varying,
+    bronactualiteit date,
+    bronnauwkeurigheid integer,
+    dimensie dimensietype,
+    visualisatiecode integer,
+    tdncode integer,
+    hoogte double precision,
+    hoogteniveau integer,
+    status statustype,
+    typerelief typerelieftype,
+    naamnl character varying(50)
+);
+
+
+ALTER TABLE public.hoogteofdieptepunt OWNER TO jiska;
+
+--
+-- Name: hoogteofdieptepunt_ogc_fid_seq; Type: SEQUENCE; Schema: public; Owner: jiska
+--
+
+CREATE SEQUENCE hoogteofdieptepunt_ogc_fid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.hoogteofdieptepunt_ogc_fid_seq OWNER TO jiska;
+
+--
+-- Name: hoogteofdieptepunt_ogc_fid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: jiska
+--
+
+ALTER SEQUENCE hoogteofdieptepunt_ogc_fid_seq OWNED BY hoogteofdieptepunt.ogc_fid;
+
+
+--
+-- Name: ogc_fid; Type: DEFAULT; Schema: public; Owner: jiska
+--
+
+ALTER TABLE ONLY hoogteofdieptepunt ALTER COLUMN ogc_fid SET DEFAULT nextval('hoogteofdieptepunt_ogc_fid_seq'::regclass);
+
+
+--
+-- Name: hoogteofdieptepunt_pkey; Type: CONSTRAINT; Schema: public; Owner: jiska; Tablespace: 
+--
+
+ALTER TABLE ONLY hoogteofdieptepunt
+    ADD CONSTRAINT hoogteofdieptepunt_pkey PRIMARY KEY (ogc_fid);
+
+
+--
+-- Name: hoogteofdieptepunt_geom_idx; Type: INDEX; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE INDEX hoogteofdieptepunt_geom_idx ON hoogteofdieptepunt USING gist (wkb_geometry);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+--
+-- PostgreSQL database dump
+--
+
+SET statement_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+SET search_path = public, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: hoogteverschil; Type: TABLE; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE TABLE hoogteverschil (
+    ogc_fid integer NOT NULL,
+    wkb_geometry geometry(LineString,28992),
+    gml_id character varying(1),
+    identificatie character varying(20),
+    brontype brontypetype,
+    bronbeschrijving character varying,
+    bronactualiteit date,
+    bronnauwkeurigheid double precision,
+    dimensie dimensietype,
+    visualisatiecode integer,
+    tdncode integer,
+    hoogteklasse hoogteklasserelieftype,
+    hoogteniveau integer,
+    status statustype,
+    typerelief typerelieftype,
+    functie functierelieftype,
+    naamnl character varying(50)
+);
+
+
+ALTER TABLE public.hoogteverschil OWNER TO jiska;
+
+--
+-- Name: hoogteverschil_ogc_fid_seq; Type: SEQUENCE; Schema: public; Owner: jiska
+--
+
+CREATE SEQUENCE hoogteverschil_ogc_fid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.hoogteverschil_ogc_fid_seq OWNER TO jiska;
+
+--
+-- Name: hoogteverschil_ogc_fid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: jiska
+--
+
+ALTER SEQUENCE hoogteverschil_ogc_fid_seq OWNED BY hoogteverschil.ogc_fid;
+
+
+--
+-- Name: ogc_fid; Type: DEFAULT; Schema: public; Owner: jiska
+--
+
+ALTER TABLE ONLY hoogteverschil ALTER COLUMN ogc_fid SET DEFAULT nextval('hoogteverschil_ogc_fid_seq'::regclass);
+
+
+--
+-- Name: hoogteverschil_pkey; Type: CONSTRAINT; Schema: public; Owner: jiska; Tablespace: 
+--
+
+ALTER TABLE ONLY hoogteverschil
+    ADD CONSTRAINT hoogteverschil_pkey PRIMARY KEY (ogc_fid);
+
+
+--
+-- Name: hoogteverschil_geom_idx; Type: INDEX; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE INDEX hoogteverschil_geom_idx ON hoogteverschil USING gist (wkb_geometry);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+--
+-- PostgreSQL database dump
+--
+
+SET statement_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+SET search_path = public, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: inrichtingselement; Type: TABLE; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE TABLE inrichtingselement (
+    ogc_fid integer NOT NULL,
+    wkb_geometry geometry(Geometry,28992),
+    gml_id character varying(1),
+    identificatie character varying(20),
+    brontype brontypetype,
+    bronbeschrijving character varying,
+    bronactualiteit date,
+    bronnauwkeurigheid double precision,
+    dimensie dimensietype,
+    visualisatiecode integer,
+    tdncode integer,
+    hoogteniveau integer,
+    status statustype,
+    typeinrichtingselement typeinrichtingselementtype,
+    nummer double precision,
+    naamnl character varying(50),
+    naamfries character varying(50)
+);
+
+
+ALTER TABLE public.inrichtingselement OWNER TO jiska;
+
+--
+-- Name: inrichtingselement_ogc_fid_seq; Type: SEQUENCE; Schema: public; Owner: jiska
+--
+
+CREATE SEQUENCE inrichtingselement_ogc_fid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.inrichtingselement_ogc_fid_seq OWNER TO jiska;
+
+--
+-- Name: inrichtingselement_ogc_fid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: jiska
+--
+
+ALTER SEQUENCE inrichtingselement_ogc_fid_seq OWNED BY inrichtingselement.ogc_fid;
+
+
+--
+-- Name: ogc_fid; Type: DEFAULT; Schema: public; Owner: jiska
+--
+
+ALTER TABLE ONLY inrichtingselement ALTER COLUMN ogc_fid SET DEFAULT nextval('inrichtingselement_ogc_fid_seq'::regclass);
+
+
+--
+-- Name: inrichtingselement_pkey; Type: CONSTRAINT; Schema: public; Owner: jiska; Tablespace: 
+--
+
+ALTER TABLE ONLY inrichtingselement
+    ADD CONSTRAINT inrichtingselement_pkey PRIMARY KEY (ogc_fid);
+
+
+--
+-- Name: inrichtingselement_geom_idx; Type: INDEX; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE INDEX inrichtingselement_geom_idx ON inrichtingselement USING gist (wkb_geometry);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+--
+-- PostgreSQL database dump
+--
+
+SET statement_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+SET search_path = public, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: isohoogte; Type: TABLE; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE TABLE isohoogte (
+    ogc_fid integer NOT NULL,
+    wkb_geometry geometry(LineString,28992),
+    gml_id character varying(1),
+    identificatie character varying(20),
+    brontype brontypetype,
+    bronbeschrijving character varying,
+    bronactualiteit date,
+    bronnauwkeurigheid double precision,
+    dimensie dimensietype,
+    visualisatiecode integer,
+    tdncode integer,
+    hoogte double precision,
+    hoogteniveau integer,
+    status statustype,
+    typerelief typerelieftype
+);
+
+
+ALTER TABLE public.isohoogte OWNER TO jiska;
+
+--
+-- Name: isohoogte_ogc_fid_seq; Type: SEQUENCE; Schema: public; Owner: jiska
+--
+
+CREATE SEQUENCE isohoogte_ogc_fid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.isohoogte_ogc_fid_seq OWNER TO jiska;
+
+--
+-- Name: isohoogte_ogc_fid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: jiska
+--
+
+ALTER SEQUENCE isohoogte_ogc_fid_seq OWNED BY isohoogte.ogc_fid;
+
+
+--
+-- Name: ogc_fid; Type: DEFAULT; Schema: public; Owner: jiska
+--
+
+ALTER TABLE ONLY isohoogte ALTER COLUMN ogc_fid SET DEFAULT nextval('isohoogte_ogc_fid_seq'::regclass);
+
+
+--
+-- Name: isohoogte_pkey; Type: CONSTRAINT; Schema: public; Owner: jiska; Tablespace: 
+--
+
+ALTER TABLE ONLY isohoogte
+    ADD CONSTRAINT isohoogte_pkey PRIMARY KEY (ogc_fid);
+
+
+--
+-- Name: isohoogte_geom_idx; Type: INDEX; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE INDEX isohoogte_geom_idx ON isohoogte USING gist (wkb_geometry);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+--
+-- PostgreSQL database dump
+--
+
+SET statement_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+SET search_path = public, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: kadeofwal; Type: TABLE; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE TABLE kadeofwal (
+    ogc_fid integer NOT NULL,
+    wkb_geometry geometry(LineString,28992),
+    gml_id character varying(1),
+    identificatie character varying(20),
+    brontype brontypetype,
+    bronbeschrijving character varying,
+    bronactualiteit date,
+    bronnauwkeurigheid double precision,
+    dimensie dimensietype,
+    visualisatiecode integer,
+    tdncode integer,
+    hoogteniveau integer,
+    status statustype,
+    typerelief typerelieftype
+);
+
+
+ALTER TABLE public.kadeofwal OWNER TO jiska;
+
+--
+-- Name: kadeofwal_ogc_fid_seq; Type: SEQUENCE; Schema: public; Owner: jiska
+--
+
+CREATE SEQUENCE kadeofwal_ogc_fid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.kadeofwal_ogc_fid_seq OWNER TO jiska;
+
+--
+-- Name: kadeofwal_ogc_fid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: jiska
+--
+
+ALTER SEQUENCE kadeofwal_ogc_fid_seq OWNED BY kadeofwal.ogc_fid;
+
+
+--
+-- Name: ogc_fid; Type: DEFAULT; Schema: public; Owner: jiska
+--
+
+ALTER TABLE ONLY kadeofwal ALTER COLUMN ogc_fid SET DEFAULT nextval('kadeofwal_ogc_fid_seq'::regclass);
+
+
+--
+-- Name: kadeofwal_pkey; Type: CONSTRAINT; Schema: public; Owner: jiska; Tablespace: 
+--
+
+ALTER TABLE ONLY kadeofwal
+    ADD CONSTRAINT kadeofwal_pkey PRIMARY KEY (ogc_fid);
+
+
+--
+-- Name: kadeofwal_geom_idx; Type: INDEX; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE INDEX kadeofwal_geom_idx ON kadeofwal USING gist (wkb_geometry);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+--
+-- PostgreSQL database dump
+--
+
+SET statement_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+SET search_path = public, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: registratiefgebied; Type: TABLE; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE TABLE registratiefgebied (
+    ogc_fid integer NOT NULL,
+    wkb_geometry geometry(Polygon,28992),
+    gml_id character varying(1),
+    identificatie character varying(20),
+    brontype brontypetype,
+    bronbeschrijving character varying,
+    bronactualiteit date,
+    bronnauwkeurigheid integer,
+    dimensie dimensietype,
+    visualisatiecode integer,
+    tdncode integer,
+    naamnl character varying(50),
+    typeregistratiefgebied typeregistratiefgebiedtype,
+    naamfries character varying(50)
+);
+
+
+ALTER TABLE public.registratiefgebied OWNER TO jiska;
+
+--
+-- Name: registratiefgebied_ogc_fid_seq; Type: SEQUENCE; Schema: public; Owner: jiska
+--
+
+CREATE SEQUENCE registratiefgebied_ogc_fid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.registratiefgebied_ogc_fid_seq OWNER TO jiska;
+
+--
+-- Name: registratiefgebied_ogc_fid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: jiska
+--
+
+ALTER SEQUENCE registratiefgebied_ogc_fid_seq OWNED BY registratiefgebied.ogc_fid;
+
+
+--
+-- Name: ogc_fid; Type: DEFAULT; Schema: public; Owner: jiska
+--
+
+ALTER TABLE ONLY registratiefgebied ALTER COLUMN ogc_fid SET DEFAULT nextval('registratiefgebied_ogc_fid_seq'::regclass);
+
+
+--
+-- Name: registratiefgebied_pkey; Type: CONSTRAINT; Schema: public; Owner: jiska; Tablespace: 
+--
+
+ALTER TABLE ONLY registratiefgebied
+    ADD CONSTRAINT registratiefgebied_pkey PRIMARY KEY (ogc_fid);
+
+
+--
+-- Name: registratiefgebied_geom_idx; Type: INDEX; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE INDEX registratiefgebied_geom_idx ON registratiefgebied USING gist (wkb_geometry);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+--
+-- PostgreSQL database dump
+--
+
+SET statement_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+SET search_path = public, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: spoorbaandeel; Type: TABLE; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE TABLE spoorbaandeel (
+    ogc_fid integer NOT NULL,
+    wkb_geometry geometry(Geometry,28992),
+    gml_id character varying(1),
+    identificatie character varying(20),
+    brontype brontypetype,
+    bronbeschrijving character varying,
+    bronactualiteit date,
+    bronnauwkeurigheid double precision,
+    dimensie dimensietype,
+    visualisatiecode integer,
+    tdncode integer,
+    aantalsporen integer,
+    elektrificatie elektrificatiespoortype,
+    hoogteniveau integer,
+    spoorbreedte spoorbreedtetype,
+    status statustype,
+    typeinfrastructuurspoorbaandeel typeinfrastructuurspoorbaandeeltype,
+    typespoorbaan typespoorbaantype,
+    vervoerfunctie vervoerfunctiespoortype, 
+    fysiekvoorkomen fysiekvoorkomenspoortype 
+);
+
+
+ALTER TABLE public.spoorbaandeel OWNER TO jiska;
+
+--
+-- Name: spoorbaandeel_ogc_fid_seq; Type: SEQUENCE; Schema: public; Owner: jiska
+--
+
+CREATE SEQUENCE spoorbaandeel_ogc_fid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.spoorbaandeel_ogc_fid_seq OWNER TO jiska;
+
+--
+-- Name: spoorbaandeel_ogc_fid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: jiska
+--
+
+ALTER SEQUENCE spoorbaandeel_ogc_fid_seq OWNED BY spoorbaandeel.ogc_fid;
+
+
+--
+-- Name: ogc_fid; Type: DEFAULT; Schema: public; Owner: jiska
+--
+
+ALTER TABLE ONLY spoorbaandeel ALTER COLUMN ogc_fid SET DEFAULT nextval('spoorbaandeel_ogc_fid_seq'::regclass);
+
+
+--
+-- Name: spoorbaandeel_pkey; Type: CONSTRAINT; Schema: public; Owner: jiska; Tablespace: 
+--
+
+ALTER TABLE ONLY spoorbaandeel
+    ADD CONSTRAINT spoorbaandeel_pkey PRIMARY KEY (ogc_fid);
+
+
+--
+-- Name: spoorbaandeel_geom_idx; Type: INDEX; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE INDEX spoorbaandeel_geom_idx ON spoorbaandeel USING gist (wkb_geometry);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+--
+-- PostgreSQL database dump
+--
+
+SET statement_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+SET search_path = public, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: terrein; Type: TABLE; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE TABLE terrein (
+    ogc_fid integer NOT NULL,
+    wkb_geometry geometry(Polygon,28992),
+    gml_id character varying(1),
+    identificatie character varying(20),
+    brontype brontypetype,
+    bronbeschrijving character varying,
+    bronactualiteit date,
+    bronnauwkeurigheid double precision,
+    dimensie dimensietype,
+    visualisatiecode integer,
+    tdncode integer,
+    hoogteniveau integer,
+    typelandgebruik typelandgebruiktype,
+    voorkomen voorkomenterreintype,
+    fysiekvoorkomen fysiekvoorkomenterreintype,
+    naamfries character varying(50),
+    naamnl character varying(50)
+);
+
+
+ALTER TABLE public.terrein OWNER TO jiska;
+
+--
+-- Name: terrein_ogc_fid_seq; Type: SEQUENCE; Schema: public; Owner: jiska
+--
+
+CREATE SEQUENCE terrein_ogc_fid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.terrein_ogc_fid_seq OWNER TO jiska;
+
+--
+-- Name: terrein_ogc_fid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: jiska
+--
+
+ALTER SEQUENCE terrein_ogc_fid_seq OWNED BY terrein.ogc_fid;
+
+
+--
+-- Name: ogc_fid; Type: DEFAULT; Schema: public; Owner: jiska
+--
+
+ALTER TABLE ONLY terrein ALTER COLUMN ogc_fid SET DEFAULT nextval('terrein_ogc_fid_seq'::regclass);
+
+
+--
+-- Name: terrein_pkey; Type: CONSTRAINT; Schema: public; Owner: jiska; Tablespace: 
+--
+
+ALTER TABLE ONLY terrein
+    ADD CONSTRAINT terrein_pkey PRIMARY KEY (ogc_fid);
+
+
+--
+-- Name: terrein_geom_idx; Type: INDEX; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE INDEX terrein_geom_idx ON terrein USING gist (wkb_geometry);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+--
+-- PostgreSQL database dump
+--
+
+SET statement_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+SET search_path = public, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: waterdeel; Type: TABLE; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE TABLE waterdeel (
+    ogc_fid integer NOT NULL,
+    wkb_geometry geometry(Geometry,28992),
+    gml_id character varying(1),
+    identificatie character varying(20),
+    brontype brontypetype,
+    bronbeschrijving character varying,
+    bronactualiteit date,
+    bronnauwkeurigheid double precision,
+    dimensie dimensietype,
+    visualisatiecode integer,
+    tdncode integer,
+    breedteklasse breedteklassewatertype,
+    functie functiewatertype,
+    hoofdafwatering hoofdafwateringtype,
+    hoogteniveau integer,
+    status statustype,
+    typeinfrastructuurwaterdeel typeinfrastructuurwaterdeeltype,
+    typewater typewatertype,
+    voorkomenwater voorkomenwatertype,
+    naamfries character varying(50),
+    naamnl character varying(50),
+    fysiekvoorkomen fysiekvoorkomenwatertype
+);
+
+
+ALTER TABLE public.waterdeel OWNER TO jiska;
+
+--
+-- Name: waterdeel_ogc_fid_seq; Type: SEQUENCE; Schema: public; Owner: jiska
+--
+
+CREATE SEQUENCE waterdeel_ogc_fid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.waterdeel_ogc_fid_seq OWNER TO jiska;
+
+--
+-- Name: waterdeel_ogc_fid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: jiska
+--
+
+ALTER SEQUENCE waterdeel_ogc_fid_seq OWNED BY waterdeel.ogc_fid;
+
+
+--
+-- Name: ogc_fid; Type: DEFAULT; Schema: public; Owner: jiska
+--
+
+ALTER TABLE ONLY waterdeel ALTER COLUMN ogc_fid SET DEFAULT nextval('waterdeel_ogc_fid_seq'::regclass);
+
+
+--
+-- Name: waterdeel_pkey; Type: CONSTRAINT; Schema: public; Owner: jiska; Tablespace: 
+--
+
+ALTER TABLE ONLY waterdeel
+    ADD CONSTRAINT waterdeel_pkey PRIMARY KEY (ogc_fid);
+
+
+--
+-- Name: waterdeel_geom_idx; Type: INDEX; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE INDEX waterdeel_geom_idx ON waterdeel USING gist (wkb_geometry);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+--
+-- PostgreSQL database dump
+--
+
+SET statement_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+SET search_path = public, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: wegdeel; Type: TABLE; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE TABLE wegdeel (
+    ogc_fid integer NOT NULL,
+    wkb_geometry geometry(Geometry,28992),
+    gml_id character varying(1),
+    identificatie character varying(20),
+    brontype brontypetype,
+    bronbeschrijving character varying,
+    bronactualiteit date,
+    bronnauwkeurigheid double precision,
+    dimensie dimensietype,
+    visualisatiecode integer,
+    tdncode integer,
+    gescheidenrijbaan gescheidenrijbaantype,
+    hoofdverkeersgebruik hoofdverkeersgebruiktype,
+    hoogteniveau integer,
+    status statustype,
+    straatnaamfries character varying(50),
+    typeinfrastructuurwegdeel typeinfrastructuurwegdeeltype,
+    typeweg typewegtype,
+    verhardingsbreedteklasse breedteklasseverhardingtype,
+    verhardingstype typeverhardingtype,
+    fysiekvoorkomen fysiekvoorkomenwegtype,
+    straatnaamnl character varying(50),
+    nwegnummer character varying(10),
+    brugnaam character varying(17),
+    aantalrijstroken integer
+);
+
+
+ALTER TABLE public.wegdeel OWNER TO jiska;
+
+--
+-- Name: wegdeel_ogc_fid_seq; Type: SEQUENCE; Schema: public; Owner: jiska
+--
+
+CREATE SEQUENCE wegdeel_ogc_fid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.wegdeel_ogc_fid_seq OWNER TO jiska;
+
+--
+-- Name: wegdeel_ogc_fid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: jiska
+--
+
+ALTER SEQUENCE wegdeel_ogc_fid_seq OWNED BY wegdeel.ogc_fid;
+
+
+--
+-- Name: ogc_fid; Type: DEFAULT; Schema: public; Owner: jiska
+--
+
+ALTER TABLE ONLY wegdeel ALTER COLUMN ogc_fid SET DEFAULT nextval('wegdeel_ogc_fid_seq'::regclass);
+
+
+--
+-- Name: wegdeel_pkey; Type: CONSTRAINT; Schema: public; Owner: jiska; Tablespace: 
+--
+
+ALTER TABLE ONLY wegdeel
+    ADD CONSTRAINT wegdeel_pkey PRIMARY KEY (ogc_fid);
+
+
+--
+-- Name: wegdeel_geom_idx; Type: INDEX; Schema: public; Owner: jiska; Tablespace: 
+--
+
+CREATE INDEX wegdeel_geom_idx ON wegdeel USING gist (wkb_geometry);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+--
+-- Manually create an 'enum' for all the bronbeschrijving entries
+--
+
+CREATE OR REPLACE FUNCTION lookup_bronbeschrijving() RETURNS TRIGGER AS $_$
+DECLARE
+    mybron integer;
+BEGIN
+    SELECT bron INTO mybron FROM bronbeschrijving WHERE beschrijving = NEW.bronbeschrijving;
+    IF NOT FOUND THEN
+        SELECT COUNT(bron) INTO mybron FROM bronbeschrijving ;
+        RAISE NOTICE 'Adding a new bronbeschrijving "%" as "%"', NEW.bronbeschrijving, mybron ;
+        INSERT INTO bronbeschrijving VALUES (mybron, NEW.bronbeschrijving) ;
+    END IF;
+    NEW.bronbeschrijving = mybron ;
+    RETURN NEW;
+END
+$_$ LANGUAGE plpgsql;
+
+CREATE TABLE bronbeschrijving (
+    bron         character varying,
+    beschrijving character varying
+);
+
+CREATE TRIGGER bronbeschrijving_trigger_functioneelgebied  
+    BEFORE INSERT ON functioneelgebied
+    FOR EACH ROW
+    EXECUTE PROCEDURE lookup_bronbeschrijving();
+
+CREATE TRIGGER bronbeschrijving_trigger_gebouw             
+    BEFORE INSERT ON gebouw
+    FOR EACH ROW
+    EXECUTE PROCEDURE lookup_bronbeschrijving();
+
+CREATE TRIGGER bronbeschrijving_trigger_geografischgebied  
+    BEFORE INSERT ON geografischgebied
+    FOR EACH ROW
+    EXECUTE PROCEDURE lookup_bronbeschrijving();
+
+CREATE TRIGGER bronbeschrijving_trigger_hoogteofdieptepunt 
+    BEFORE INSERT ON hoogteofdieptepunt
+    FOR EACH ROW
+    EXECUTE PROCEDURE lookup_bronbeschrijving();
+
+CREATE TRIGGER bronbeschrijving_trigger_hoogteverschil     
+    BEFORE INSERT ON hoogteverschil
+    FOR EACH ROW
+    EXECUTE PROCEDURE lookup_bronbeschrijving();
+
+CREATE TRIGGER bronbeschrijving_trigger_inrichtingselement 
+    BEFORE INSERT ON inrichtingselement
+    FOR EACH ROW
+    EXECUTE PROCEDURE lookup_bronbeschrijving();
+
+CREATE TRIGGER bronbeschrijving_trigger_isohoogte          
+    BEFORE INSERT ON isohoogte
+    FOR EACH ROW
+    EXECUTE PROCEDURE lookup_bronbeschrijving();
+
+CREATE TRIGGER bronbeschrijving_trigger_kadeofwal          
+    BEFORE INSERT ON kadeofwal
+    FOR EACH ROW
+    EXECUTE PROCEDURE lookup_bronbeschrijving();
+
+CREATE TRIGGER bronbeschrijving_trigger_registratiefgebied 
+    BEFORE INSERT ON registratiefgebied
+    FOR EACH ROW
+    EXECUTE PROCEDURE lookup_bronbeschrijving();
+
+CREATE TRIGGER bronbeschrijving_trigger_spoorbaandeel      
+    BEFORE INSERT ON spoorbaandeel
+    FOR EACH ROW
+    EXECUTE PROCEDURE lookup_bronbeschrijving();
+
+CREATE TRIGGER bronbeschrijving_trigger_terrein            
+    BEFORE INSERT ON terrein
+    FOR EACH ROW
+    EXECUTE PROCEDURE lookup_bronbeschrijving();
+
+CREATE TRIGGER bronbeschrijving_trigger_waterdeel          
+    BEFORE INSERT ON waterdeel
+    FOR EACH ROW
+    EXECUTE PROCEDURE lookup_bronbeschrijving();
+
+CREATE TRIGGER bronbeschrijving_trigger_wegdeel            
+    BEFORE INSERT ON wegdeel
+    FOR EACH ROW
+    EXECUTE PROCEDURE lookup_bronbeschrijving();
+
+

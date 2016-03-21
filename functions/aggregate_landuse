@@ -1,0 +1,64 @@
+CREATE OR REPLACE FUNCTION aggregate_landuse(myrid integer) RETURNS integer
+AS $$
+BEGIN
+    UPDATE landuse
+    SET rast = ( SELECT ST_SetValues( landuse.rast, 1, gvals ) FROM (
+    SELECT
+        array_agg( (original, type)::geomval ) as gvals
+    FROM (
+        WITH uses AS (
+            WITH pixels AS (
+                SELECT ST_Transform((pap).geom, 28992) AS transformed,
+                       (pap).geom                      AS original
+                FROM (
+                    SELECT ST_PixelAsPolygons(rast,1,FALSE) AS pap
+                    FROM landuse
+                    WHERE rid=myrid
+                ) AS foo
+            ),
+            bb AS (SELECT ST_Transform( ST_Envelope( rast ), 28992 ) AS envelope FROM landuse WHERE rid=myrid)
+            SELECT original,
+                   array_length( enum_range(NULL, typelandgebruik), 1 )       AS type, 
+                   SUM( ST_Area( ST_Intersection(transformed,wkb_geometry) )) AS area 
+            FROM pixels, (
+                SELECT wkb_geometry, typelandgebruik FROM terrein,bb WHERE ST_Intersects(wkb_geometry, envelope)
+                ) AS foo
+            WHERE ST_Intersects(transformed, wkb_geometry)
+            GROUP BY original,typelandgebruik
+            UNION
+            SELECT original,
+                   22::integer                                                AS type, 
+                   SUM( ST_Area( ST_Intersection(transformed,wkb_geometry) )) AS area
+            FROM pixels, (
+                SELECT wkb_geometry FROM wegdeel_vlak,bb WHERE ST_Intersects(wkb_geometry, envelope)
+                ) AS foo
+            WHERE ST_Intersects(transformed, wkb_geometry)
+            GROUP BY original
+            UNION
+            SELECT original,
+                   23::integer                                                AS type,
+                   SUM( ST_Area( ST_Intersection(transformed,wkb_geometry) )) AS area
+            FROM pixels, (
+                SELECT wkb_geometry FROM waterdeel_vlak,bb WHERE ST_Intersects(wkb_geometry, envelope)
+                ) AS foo
+            WHERE ST_Intersects(transformed, wkb_geometry)
+            GROUP BY original
+            UNION
+            SELECT original, 0::integer AS type, 0.00001 AS area
+            FROM pixels
+        )
+        SELECT u.original, u.type
+        FROM uses AS u
+        INNER JOIN(
+            SELECT uses.original, MAX( uses.area ) AS area
+            FROM uses
+            GROUP BY original
+        ) AS maxtable ON (maxtable.original = u.original AND maxtable.area = u.area)
+        ) AS foo) AS foo)
+    WHERE rid=myrid;
+
+    UPDATE landuse SET processed = TRUE WHERE rid = myrid;
+
+    RETURN myrid;
+END;
+$$ LANGUAGE plpgsql;

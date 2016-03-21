@@ -1,0 +1,43 @@
+-- Urban fraction
+-- the fraction of the cell having a NDVI value below 0.2, (ie. below 51 for 8-bit integer LuFo2008)
+--
+-- depends on: lufondvi
+-- arguments: geom, geometry    grid cell to analyze
+-- results:  urbanisation fraction, from 0 to 1
+--
+CREATE OR REPLACE FUNCTION urban_fraction(geom geometry) RETURNS real
+AS $$
+DECLARE
+    srid   integer;
+    r      raster;
+    result real;
+BEGIN
+    -- get the correct SRID
+    SELECT ST_SRID(rast) FROM lufondvi LIMIT 1 INTO srid ;  
+
+    SELECT ST_MapAlgebra( rast, 1, NULL, '(CASE WHEN [rast.val] >= 51 THEN 1.0 ELSE 0.0 END)' )
+    FROM
+        (
+        SELECT ST_Union( ST_Clip( rast, ST_Transform(geom, srid) ) ) AS rast
+        FROM lufondvi
+        WHERE (ST_Transform(geom,srid) && rast) AND ST_Intersects( ST_Transform( geom, srid), rast )
+        ) AS foo
+    INTO r;
+
+    SELECT (1.0 * stats.sum) / (1.0 * stats.count)
+    FROM ( SELECT (ST_SummaryStats(r)).* ) AS stats
+    INTO result;
+
+    -- Keep results meaningfull
+    IF result > 1 THEN
+        result = 1;
+    END IF;
+
+    IF result < 0 THEN
+        result = 0;
+    END IF;
+
+    return (1.0 - result);
+
+END;
+$$ LANGUAGE plpgsql;

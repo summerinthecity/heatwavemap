@@ -1,0 +1,135 @@
+--
+-- Urban parameter table
+--
+
+-- Create a tiling over the Netherlands
+
+CREATE TABLE myurbtiles(id serial primary key, val double precision, x integer, y integer, todo bool, processed bool);
+SELECT AddGeometryColumn ('public','myurbtiles','geom',4326,'POLYGON',2);
+INSERT INTO myurbtiles(val,x,y,geom,todo,processed)
+SELECT (gv).val  AS val,
+       (gv).x    AS x,
+       (gv).y    AS y,
+       (gv).geom AS geom,
+       false     AS todo,
+       false     AS processed
+FROM (
+SELECT ST_PixelAsPolygons(rast) AS gv FROM 
+    (
+    SELECT ST_AddBand(rast, 1, '32BSI', 0) AS rast FROM
+        (
+        SELECT ST_MakeEmptyRaster(256,272,3.345,53.6, 0.0014614 * 2816 / 256, -0.0008979 * 3264 / 272, 0,0, 4326) AS rast 
+        ) AS foo
+    ) AS foo
+) AS foo ; 
+
+
+
+
+
+-- Create the URB_PARAM table
+
+CREATE TABLE myurb(rid integer primary key, rast raster, processed bool);
+CREATE INDEX myurb_gist ON myurb USING gist( ST_ConvexHull(rast) );
+
+
+-- Set some tiles to be processed
+UPDATE myurbtiles SET todo = TRUE WHERE x > 140 AND y > 140 AND x < 150 AND y < 157;
+UPDATE myurbtiles SET todo = TRUE WHERE x > 138 AND x < 141 AND y > 140 AND y < 157;
+
+-- Add rasters for each tile that is to be processed
+
+SELECT DropRasterConstraints( 'myurb', 'rast' );
+
+INSERT INTO myurb(rid, rast, processed) (
+WITH foo AS (
+        SELECT ST_PointN ( ST_Boundary( geom ),1 ) AS ul, x AS x, y AS y FROM myurbtiles
+        WHERE todo = TRUE AND processed = FALSE 
+    ) 
+SELECT
+    (y-1)*256 + x                       AS rid,
+    ST_AddBand( ST_MakeEmptyRaster( 11, 12,  ST_X(ul), ST_Y(ul), 0.0014614, -0.0008979, 0, 0, 4326), '32BSI'::text, 0, 0 ) AS rast,
+    FALSE AS processed
+FROM foo);
+
+-- Create the 132 bands
+SELECT create_urb_dataset( 'myurb', rid ) FROM (
+    SELECT (y-1)*256+x AS rid FROM myurbtiles WHERE todo = TRUE AND processed = FALSE
+) AS foo;
+
+-- Set the tile to processed
+UPDATE myurbtiles SET processed = TRUE WHERE todo = TRUE AND processed = FALSE;
+
+SELECT AddRasterConstraints( 'myurb', 'rast' );
+
+
+# Process 100 tiles
+
+WITH task AS (
+   SELECT rid FROM myurb WHERE todo = TRUE ORDER BY rid LIMIT 100
+)
+SELECT
+ make_urb_param('plan_area_fraction',             'myurb', rid, 91,1000),
+ make_urb_param('mean_building_height',           'myurb', rid, 92,1000),
+ make_urb_param('stddev_building_height',         'myurb', rid, 93,1000), 
+ make_urb_param('area_weighted_building_height',  'myurb', rid, 94,1000), 
+ make_urb_param('wall_surface_area_ratio',        'myurb', rid, 95,1000), 
+ make_urb_param('frontal_area_ns',                'myurb', rid, 96,1000), 
+ make_urb_param('frontal_area_45',                'myurb', rid, 97,1000), 
+ make_urb_param('frontal_area_ew',                'myurb', rid, 98,1000), 
+ make_urb_param('frontal_area_135',               'myurb', rid, 99,1000)
+FROM
+ tasks
+;
+
+WITH task AS (
+   SELECT rid FROM myurb WHERE todo = TRUE ORDER BY rid LIMIT 100
+)
+UPDATE myurb SET processed = TRUE WHERE myurb.rid = task.rid;
+
+
+
+-- Writing out all the small tiles for use in WPS
+
+SELECT (gv).val  AS val,
+       (gv).x    AS x,
+       (gv).y    AS y,
+       (gv).geom AS geom,
+       false     AS todo,
+       false     AS processed
+FROM (
+SELECT ST_PixelAsPolygons(rast) AS gv FROM 
+    (
+    SELECT ST_AddBand(rast, 1, '32BSI', 0) AS rast FROM
+        (
+        ) AS foo
+    ) AS foo
+) AS foo ; 
+
+POLYGON((0 295998,
+         0 624006,
+           292002 624006
+           292002 295998
+
+
+WITH envelopes AS (
+SELECT x + y * 17 AS eid, geom AS envelope FROM
+(
+SELECT
+   (ST_PixelAsPolygons(
+     ST_AddBand( ST_MakeEmptyRaster(16,17,0.0,295998, 292002 / 16, -328008 / 17, 0,0, 28992), 1, '8BUI', 0 )
+   )).*
+) AS foo
+)
+SELECT write_file( ST_AsGDALRaster( rast, 'GTiff' ),  '/var/lib/pgsql/ndvi/tile.' || eid || '.tif' , '777' )
+FROM
+   (
+   SELECT ST_Union(ST_Clip(rast,envelope)) AS rast, eid FROM lufondvi, envelopes WHERE (rast && envelope) AND ST_Intersects(rast,envelope) GROUP BY eid
+   ) AS foo
+WHERE
+   rast IS NOT NULL AND ST_IsEmpty( rast ) = FALSE
+
+
+SELECT write_file( ST_AsGDALRaster( rast, 'GTiff' ),  '/var/lib/pgsql/ndvi/' || rid / 1000 || '/tile.' || rid || '.tif' , '777' );
+
+

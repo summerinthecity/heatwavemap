@@ -1,0 +1,34 @@
+-- Plan Area Fraction LF_URB2D URB_PARAM=91
+-- sum of the area of buildings ('gebouw') in the cell, divided by cell area.
+-- lambda_p
+--
+-- depends on: gebouw table
+-- arguments: geom, geometry    grid cell to analyze
+-- results:  plan area [m2/m2], always >0
+--
+CREATE OR REPLACE FUNCTION plan_area_fraction(geom geometry) RETURNS real
+AS $$
+DECLARE
+    srid   integer;
+    result real;
+BEGIN
+    -- get the correct SRID
+    SELECT ST_SRID(wkb_geometry) FROM gebouw LIMIT 1 INTO srid ;  
+
+    SELECT SUM( ST_Area( ST_Intersection( ST_Transform( geom, srid ), gebouw.wkb_geometry) ) ) / ST_Area( ST_Transform( geom, srid ) )
+    FROM
+        gebouw
+    WHERE
+        (ST_Transform(geom,srid) && wkb_geometry) AND ST_Intersects( ST_Transform(geom, srid), wkb_geometry )
+    INTO
+        result;
+
+    -- Keep results meaningfull
+    IF result > 0 THEN
+        RETURN result;
+    ELSE
+        RETURN 0;
+    END IF;
+
+END;
+$$ LANGUAGE plpgsql;

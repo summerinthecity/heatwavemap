@@ -1,0 +1,57 @@
+-- POLYGON((5.57576932795352 51.9433894683105,5.57603045824909 52.0054211315657,5.72548897218673 52.0050861996827,5.72502134157921 51.9430551368936,5.57576932795352 51.9433894683105))
+-- SELECT make_urb_params('frac_urb', 'urbanfraction', 1, 1);
+-- SELECT make_urb_params('urban_fraction', 'urbanfraction', myrid, 1) FROM (SELECT rid AS myrid FROM urbanfraction WHERE processed = FALSE LIMIT 1) as foo;
+
+
+
+
+-- Create a tiling over the Netherlands
+CREATE TABLE urbanfractiontiles(rid serial primary key, rast raster);
+INSERT INTO urbanfractiontiles(rid,rast)
+VALUES( 1, St_MakeEmptyRaster(16, 11, 5.57576932795352, 52.0054211315657,  0.000365350 * 400 / 16, -0.000224475 * 200 / 11,   0,0, 4326) );
+
+UPDATE urbanfractiontiles SET rast = ST_Addband(rast,'32BSI'::text,0) WHERE rid = 1; 
+SELECT AddRasterConstraints( 'urbanfractiontiles', 'rast' );
+
+CREATE TABLE urbanfractiontilesbb(id serial primary key, val double precision, x integer, y integer, processed bool);
+SELECT AddGeometryColumn ('public','urbanfractiontilesbb','geom',4326,'POLYGON',2);
+INSERT INTO urbanfractiontilesbb (val,x,y,geom,processed)
+SELECT (gv).val  AS val,
+       (gv).x    AS x,
+       (gv).y    AS y,
+       (gv).geom AS geom,
+       false     AS processed
+FROM (SELECT ST_PixelAsPolygons(rast) AS gv FROM urbanfractiontiles) AS foo ;
+
+UPDATE urbanfractiontilesbb SET val = 0;
+UPDATE urbanfractiontilesbb SET val = (y-1)*16 + x FROM nl WHERE ST_Intersects( ST_SetSRID(urbanfractiontilesbb.geom,4326), ST_SetSRID(nl.geom,4326) ) ;
+
+
+CREATE TABLE urbanfraction(rid integer primary key, rast raster, processed bool);
+INSERT INTO urbanfraction(rid, rast, processed)
+(
+WITH foo AS (
+        SELECT ST_PointN ( ST_Boundary( geom ),1 ) AS ul,
+               (y-1)*16 +x                         AS rid
+        FROM urbanfractiontilesbb
+        WHERE val > 0) 
+SELECT
+    rid,
+    ST_MakeEmptyRaster( 25, 26,  ST_X(ul), ST_Y(ul), 0.000365350, 0.000224475, 0, 0, 4326) AS rast,
+    false AS processed
+FROM foo);
+
+WITH foo AS (
+    SELECT rid AS rid, ST_AddBand( rast, '32BSI'::text, 0, 0) AS rast FROM urbanfraction WHERE rid > 0
+)
+UPDATE urbanfraction
+SET rast = foo.rast FROM foo WHERE urbanfraction.rid = foo.rid;
+
+
+
+CREATE INDEX urbanfraction_gist ON urbanfraction USING gist( ST_ConvexHull(rast) );
+
+SELECT AddRasterConstraints( 'urbanfraction', 'rast' );
+VACUUM ANALYZE urbanfraction;
+
+

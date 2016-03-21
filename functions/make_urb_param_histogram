@@ -1,0 +1,116 @@
+-- Helper function that iterates over the raster and calls the 'urbfunc' for each pixel.
+-- Result is stored in band number 'urbband' to 'urbband + 15'
+-- arguments:  urbfunc, string     function to call
+--             urbtable, string    table to receive the results. Should contain rast raster, rid integer.
+--             urbrid, integer     raster id to set
+--             urbband, integer    band id to set
+--
+CREATE OR REPLACE FUNCTION make_urb_param_histogram(urbfunc varchar, urbtable varchar, urbrid integer, urbband integer) RETURNS varchar 
+AS $$
+
+DECLARE
+    x      integer;
+    nx     integer;
+    y      integer;
+    z      integer;
+    ny     integer;
+    geom   geometry;
+    val    integer[];
+
+    band01 integer[][]; 
+    band02 integer[][]; 
+    band03 integer[][]; 
+    band04 integer[][]; 
+    band05 integer[][]; 
+    band06 integer[][]; 
+    band07 integer[][]; 
+    band08 integer[][]; 
+    band09 integer[][]; 
+    band10 integer[][]; 
+    band11 integer[][]; 
+    band12 integer[][]; 
+    band13 integer[][]; 
+    band14 integer[][]; 
+    band15 integer[][]; 
+
+BEGIN
+    -- get raster size
+    EXECUTE 'SELECT ST_Width( rast ),ST_Height( rast ) FROM '
+            || urbtable
+            || ' WHERE rid = '
+            || urbrid
+    INTO nx,ny ; 
+
+    -- initialize new band
+    band01 := array_fill(0, ARRAY[ny,nx]);
+    band02 := array_fill(0, ARRAY[ny,nx]);
+    band03 := array_fill(0, ARRAY[ny,nx]);
+    band04 := array_fill(0, ARRAY[ny,nx]);
+    band05 := array_fill(0, ARRAY[ny,nx]);
+    band06 := array_fill(0, ARRAY[ny,nx]);
+    band07 := array_fill(0, ARRAY[ny,nx]);
+    band08 := array_fill(0, ARRAY[ny,nx]);
+    band09 := array_fill(0, ARRAY[ny,nx]);
+    band10 := array_fill(0, ARRAY[ny,nx]);
+    band11 := array_fill(0, ARRAY[ny,nx]);
+    band12 := array_fill(0, ARRAY[ny,nx]);
+    band13 := array_fill(0, ARRAY[ny,nx]);
+    band14 := array_fill(0, ARRAY[ny,nx]);
+    band15 := array_fill(0, ARRAY[ny,nx]);
+
+    FOR y IN 1..ny LOOP
+
+        FOR x IN 1..nx LOOP
+
+            -- get the pixel as a geometry
+            EXECUTE 'SELECT ST_PixelAsPolygon( rast, ' || x || ' , ' || y || ' ) FROM ' || urbtable || ' WHERE rid = ' || urbrid
+            INTO geom ;
+
+            EXECUTE 'SELECT ' || urbfunc || ' ( ' || quote_literal( ST_AsEWKT(geom) ) || '::geometry  ) '
+            INTO val ;
+
+            band01[y][x] := round(val[ 1]) ;
+            band02[y][x] := round(val[ 2]) ;
+            band03[y][x] := round(val[ 3]) ;
+            band04[y][x] := round(val[ 4]) ;
+            band05[y][x] := round(val[ 5]) ;
+            band06[y][x] := round(val[ 6]) ;
+            band07[y][x] := round(val[ 7]) ;
+            band08[y][x] := round(val[ 8]) ;
+            band09[y][x] := round(val[ 9]) ;
+            band10[y][x] := round(val[10]) ;
+            band11[y][x] := round(val[11]) ;
+            band12[y][x] := round(val[12]) ;
+            band13[y][x] := round(val[13]) ;
+            band14[y][x] := round(val[14]) ;
+            band15[y][x] := round(val[15]) ;
+
+        END LOOP;
+
+        RAISE NOTICE 'Progress %/%', y, ny;
+
+    END LOOP;
+
+    -- Write band to urb table
+    EXECUTE 'UPDATE ' || urbtable || ' SET rast = ST_SetValues( rast, ' || urbband +  1 - 1 || ', 1, 1, ' || quote_literal(band01) || ' ) ' || ' WHERE rid = ' || urbrid ; 
+    EXECUTE 'UPDATE ' || urbtable || ' SET rast = ST_SetValues( rast, ' || urbband +  2 - 1 || ', 1, 1, ' || quote_literal(band02) || ' ) ' || ' WHERE rid = ' || urbrid ; 
+    EXECUTE 'UPDATE ' || urbtable || ' SET rast = ST_SetValues( rast, ' || urbband +  3 - 1 || ', 1, 1, ' || quote_literal(band03) || ' ) ' || ' WHERE rid = ' || urbrid ; 
+    EXECUTE 'UPDATE ' || urbtable || ' SET rast = ST_SetValues( rast, ' || urbband +  4 - 1 || ', 1, 1, ' || quote_literal(band04) || ' ) ' || ' WHERE rid = ' || urbrid ; 
+    EXECUTE 'UPDATE ' || urbtable || ' SET rast = ST_SetValues( rast, ' || urbband +  5 - 1 || ', 1, 1, ' || quote_literal(band05) || ' ) ' || ' WHERE rid = ' || urbrid ; 
+    EXECUTE 'UPDATE ' || urbtable || ' SET rast = ST_SetValues( rast, ' || urbband +  6 - 1 || ', 1, 1, ' || quote_literal(band06) || ' ) ' || ' WHERE rid = ' || urbrid ; 
+    EXECUTE 'UPDATE ' || urbtable || ' SET rast = ST_SetValues( rast, ' || urbband +  7 - 1 || ', 1, 1, ' || quote_literal(band07) || ' ) ' || ' WHERE rid = ' || urbrid ; 
+    EXECUTE 'UPDATE ' || urbtable || ' SET rast = ST_SetValues( rast, ' || urbband +  8 - 1 || ', 1, 1, ' || quote_literal(band08) || ' ) ' || ' WHERE rid = ' || urbrid ; 
+    EXECUTE 'UPDATE ' || urbtable || ' SET rast = ST_SetValues( rast, ' || urbband +  9 - 1 || ', 1, 1, ' || quote_literal(band09) || ' ) ' || ' WHERE rid = ' || urbrid ; 
+    EXECUTE 'UPDATE ' || urbtable || ' SET rast = ST_SetValues( rast, ' || urbband + 10 - 1 || ', 1, 1, ' || quote_literal(band10) || ' ) ' || ' WHERE rid = ' || urbrid ; 
+    EXECUTE 'UPDATE ' || urbtable || ' SET rast = ST_SetValues( rast, ' || urbband + 11 - 1 || ', 1, 1, ' || quote_literal(band11) || ' ) ' || ' WHERE rid = ' || urbrid ; 
+    EXECUTE 'UPDATE ' || urbtable || ' SET rast = ST_SetValues( rast, ' || urbband + 12 - 1 || ', 1, 1, ' || quote_literal(band12) || ' ) ' || ' WHERE rid = ' || urbrid ; 
+    EXECUTE 'UPDATE ' || urbtable || ' SET rast = ST_SetValues( rast, ' || urbband + 13 - 1 || ', 1, 1, ' || quote_literal(band13) || ' ) ' || ' WHERE rid = ' || urbrid ; 
+    EXECUTE 'UPDATE ' || urbtable || ' SET rast = ST_SetValues( rast, ' || urbband + 14 - 1 || ', 1, 1, ' || quote_literal(band14) || ' ) ' || ' WHERE rid = ' || urbrid ; 
+    EXECUTE 'UPDATE ' || urbtable || ' SET rast = ST_SetValues( rast, ' || urbband + 15 - 1 || ', 1, 1, ' || quote_literal(band15) || ' ) ' || ' WHERE rid = ' || urbrid ; 
+
+    EXECUTE 'UPDATE ' || urbtable || ' SET  processed = TRUE ' || ' WHERE rid = ' || urbrid ; 
+
+RETURN
+    urbfunc ;
+END;
+$$ LANGUAGE plpgsql;
