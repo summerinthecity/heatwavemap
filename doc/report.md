@@ -21,6 +21,7 @@
 
 The project aim is develop a novel prototype hourly weather forecasting for human thermal comfort in urban areas at street level.  The traditional weather forecast, as illustrated below, is based on the large scale weather system of high- and low- pressure systems.  Although weather is difficult to predict accurately, the forecasts have become more and more reliable.  They are now reliable enough to plan an outdoor trip (or to decide to stay at home) a week in advance.
 
+
 However, the forecasts are not very accurate: they give a single temperature for a region the size of a province. The actual (local) temperature can be quite different from the forecast, depending on whether you are in city, a park, or close to water.  Actually, the forecast is valid for the official weather stations, which are located in rural areas, away from the cities where most people live.  As the popularity of the rain-radar has shown, people love to have better information, like *when* and *where* it will rain.  This project tries to bring a similar precision to the temperature forecast: by taking into account the local information, forecast the temperature in urban areas at street level.
     
 ## Heat stress
