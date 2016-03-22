@@ -225,7 +225,8 @@ website:[http://mapnik.org/](http://mapnik.org/)
 Visualization of GIS data; can be used to render production quality maps. Uses GDAL for input, but can also connect directly to PostGIS. Best used via the XML interface. Licence: LGPLv2.1
 
 ## Fiona and Shapely
-website:[https://pypi.python.org/pypi/Fiona])(https://pypi.python.org/pypi/Fiona)
+website:[https://pypi.python.org/pypi/Fiona](https://pypi.python.org/pypi/Fiona)
+
 webiste:[https://pypi.python.org/pypi/Shapely](https://pypi.python.org/pypi/Shapely)
 
 Alternative to the vector part of PostGIS. Fiona provides clean python bindings to GDAL, Shapely implements GIS operations (intersections, unions, etc.). Both are under a BSD license.
