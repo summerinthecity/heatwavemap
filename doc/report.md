@@ -1004,6 +1004,16 @@ It reads the Fortran namelist parses the ``geogrid`` and ``share`` sections.  It
 
 * The north-west and south-east corners.
 
+
+![Forecast domain 1](https://raw.githubusercontent.com/jiskattema/summerinthecity/master/doc/images/dom01.png  "WRF landuse on domain 1, 12.5km, default settings")
+
+![Forecast domain 2](https://raw.githubusercontent.com/jiskattema/summerinthecity/master/doc/images/dom02.png  "WRF landuse on domain 2, 2.5km, default settings")
+
+![Forecast domain 3](https://raw.githubusercontent.com/jiskattema/summerinthecity/master/doc/images/dom03.png  "WRF landuse on domain 3, 500m, new dataset")
+
+![Forecast domain 4](https://raw.githubusercontent.com/jiskattema/summerinthecity/master/doc/images/dom04.png  "WRF landuse on domain 4, 100m, new dataset")
+
+
 ## Namelist options
 
 We will want to set some options differently on the nested domain than from the host domain.  Also, we introduced two new settings to control the initialization of the urban model, and those should be added too. The entries for *diff_opt*, *km_opt*, *sf_urban_use_wur_config*   , *sf_urban_init_from_file* were updated, see the repository for details.
