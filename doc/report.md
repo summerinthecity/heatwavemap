@@ -1,12 +1,27 @@
-# Summer in the City
+# Contents
+
+1. [Summer in the City](#summer-in-the-city)
+1. [The WRF forecasting model](#the-wrf-forecasting-model)
+1. [Available data](#available-data)
+1. [Used software](#used-software)
+1. [Installing](#installing)
+1. [Importing data into the database](#importing-data-into-the-database)
+1. [Converting to WRF input](#converting-to-wrf-input)
+1. [WPS configuration](#wps-configuration)
+1. [WRF configuration](#wrf-configuration)
+1. [A quick HOWTO run](#a-quick-howto-run)
+1. [Forecasting system](#forecasting-system)
+1. [App](#app)
+1. [Summer in the City Website](#summer-in-the-city-website)
+1. [Project Output](#project-output)
+
+# <a id="summer-in-the-city">Summer in the City</a>
 
 ## Introduction
 
 The project aim is develop a novel prototype hourly weather forecasting for human thermal comfort in urban areas at street level.  The traditional weather forecast, as illustrated below, is based on the large scale weather system of high- and low- pressure systems.  Although weather is difficult to predict accurately, the forecasts have become more and more reliable.  They are now reliable enough to plan an outdoor trip (or to decide to stay at home) a week in advance.
 
-However, the forecasts are not very accurate: they give a single temperature for a region the size of a province.
-The actual (local) temperature can be quite different from the forecast, depending on whether you are in city, a park, or close to water.  Actually, the forecast is valid for the official weather stations, which are located in rural areas, away from the cities where most people live.  As the popularity of the rain-radar has shown, people love to have better information, like *when* and *where* it will rain.  This project tries to bring a similar precision to the temperature forecast:
-by taking into account the local information, forecast the temperature in urban areas at street level.
+However, the forecasts are not very accurate: they give a single temperature for a region the size of a province. The actual (local) temperature can be quite different from the forecast, depending on whether you are in city, a park, or close to water.  Actually, the forecast is valid for the official weather stations, which are located in rural areas, away from the cities where most people live.  As the popularity of the rain-radar has shown, people love to have better information, like *when* and *where* it will rain.  This project tries to bring a similar precision to the temperature forecast: by taking into account the local information, forecast the temperature in urban areas at street level.
     
 ## Heat stress
 
@@ -15,12 +30,7 @@ A heat wave is a prolonged period with excessively hot weather.  In the Netherla
 ## Urban heat island
 
 Cities are more susceptible to high temperatures than the country side.
-This is caused in part by the absence of water, trees and vegetation, and reduced wind speeds.
-Another factor is typical architecture in the city:
-Gray concrete and black asphalt absorb most of the sunlight during daytime.
-With high-rise buildings on both sides, streets are practically sheltered canyons that trap the warmth.
-And air-conditioning cools the *inside* of the buildings, but dump all the heat outside.
-All this combines to increased temperatures in the city, sometimes several degrees warmer!
+This is caused in part by the absence of water, trees and vegetation, and reduced wind speeds. Another factor is typical architecture in the city: Gray concrete and black asphalt absorb most of the sunlight during daytime. With high-rise buildings on both sides, streets are practically sheltered canyons that trap the warmth. And air-conditioning cools the *inside* of the buildings, but dump all the heat outside. All this combines to increased temperatures in the city, sometimes several degrees warmer!
 
 ## Forecasts
 
@@ -33,18 +43,57 @@ In this project we will use WRF.  This model has recently been extended for urba
 
 Accurate observations are absolutely necessary to perform, validate, and improve weather forecasts.  Unfortunately, they rarely available at the right spatial and temporal resolution.  In this project, automated measurements at selected locations in Wageningen, and later possibly Amsterdam, are performed.  Also, a specially equipped bicycle, built and designed at Wageningen University, will be used for special measurement campaigns.  This will provide us with unique data, allowing us new insights in urban temperatures.
 
-Alternative sources of observations will be investigated as well.  For instance via the Weather Underground project, a cooperation of amateur meteorologists.  Weather Underground has developed the world's largest network of personal weather stations (almost 23,000 stations in the US and over 13,000 across the rest of the world) that provides our site's users with the most localized weather conditions available. See http://www.wunderground.com/ But meteorological data could be derived from less obvious sources like the GSM cell phone network, or traffic control system.
+Alternative sources of observations will be investigated as well.  For instance via the Weather Underground project, a cooperation of amateur meteorologists.  Weather Underground has developed the world's largest network of personal weather stations (almost 23,000 stations in the US and over 13,000 across the rest of the world) that provides our site's users with the most localized weather conditions available. See [the weather underground website](http://www.wunderground.com/). But meteorological data could be derived from less obvious sources like the GSM cell phone network, or traffic control system.
 
 
 ## Presentation
 
 Finally, in this project we will try to make the developed forecasts generally available.  This could be in the form of maps showing thermal comfort forecasts, or a heat-wave alert.  The best medium is unclear yet, but could be a website, social media, or a mobile app.  
 
+# <a id="the-wrf-forecasting-model">The WRF forecasting model</a>
+
+We start with an overview of the data used in WRF, to inventory which datasets need to be created at the new 100m resolution.
+
+## Constant fields
+
+For the calculation of the interaction between the atmosphere and the land (or city!) surface, WRF uses a number of constant geographical fields:
+
+* **SOILTEMP** Annual mean deep soil temperature.
+* **SOILCTOP** 16-category top-layer soil type. As there are a few transitions from river clay to sand, crosssing close to Wageningen, it is important to get the placement of them correct.
+* **SOILBTOP** 16-category bottom-layer soil type.
+* **ALBEDO12M** Monthly varying albedo.
+* **GREENFRAC** Monthly varying greenness of the trees. Could be determined from the [Groen Monitor](http://www.groenmonitor.nl). They use satellite data to determine high temporal resolution NDVI maps at 100 meter resolution. Their focus is on agricultural application. The 100 meter resolution is too coarse to determine the urban fraction  (ie. to detect trees in individual streets), but more than good enough for this GREENFRAC.
+* **SNOALB** Albedo of snow layer. Not too relevant for Dutch heatwaves.
+* **SLOPECAT** Dominant category (?). Calculated from HGT_M field?
+* **CON** Orographic convexity, calculated from the HGT_M field?
+* **VAR** Stdev of subgrid-scale orographic height, calculated from the HGT_M field?
+* **VAR_SSO** Variance of Subgrid Scale Orography, calculated from the HGT_M field?
+* **GWDO** A set of parameters describing the gravity wave drag of the orography (OA1, OA2, OA3, OA4, OL1, OL2, OL3, OL4).  This is more relevant at course resolutions, as the orography is almost fully resolved at 100m. Also, the WRF documentation advices to use a slightly lower resolution for these fields than the actual model resolution.  No changes are necessary. 
+* **URB_PARM** Statistical parameters describing the city. Can be derived from the TOP10NL (or openstreetmap?) and OHN datasets. The statistics are meant for a resolution of a few 100s meters, and lose meaning when the resolution is too high (ie. standard deviation of building height when you have only halve a building in the gridcell). 100m by 100m seems like reasonable compromise.
+* **FRC_URB2D** The fraction of the gridcell covered by non-permeable materials (ie. roads and cities).  Can be derived from areal photos and IR photos via an NDVI.
+* **HGT_M** Orogrphy. Currently taken from Corine (?) at 25m.  For consistency, we should use the elevation layer of the OHN dataset (at 50cm).  25m resolution is probably sufficient.
+* **LANDUSEF** Land use information in either the 24 USGS land use categories, or the Corine dataset. Can be derived from the TOP10NL terrein *typelandgebruik*.
+* **LANDMASK** Can be derived from the water fraction of the landuse data.
 
 
-# Datasets
+## Updated fields
 
-There are a large number of datasets publicly available. Some are created by the Dutch government and available under permissive licenses. For official purposes, their use is even required. These datasets are mostly maintained by the Dutch Kadaster, and available via the PDOK website (www.pdok.nl). Also, the Dutch bureau for statistics (CBS) publishes some data there. Below, I list some datasets with which I have some experience, and which I believe are of good quality.
+The initialization of the atmosphere can be done the usual way from NCAR or ECMWF boundaries. 
+The urban part of WRF (SLUCM) contains a few fields that require either a spin-up or an initialization from previous runs,
+ mostly the multilayer building and road temperatures.
+
+## River and sea surface temperatures
+
+The SST in used by GFS and ECMWF operational forecasts is often a poor match for the waters along the Dutch coastline, ie. North- and South-Holland, and Zeeland.  Inland waters like rivers, the Meuse and Rhine, and the canals in Amsterdam, can even reach temperatures of 20 degrees or more.  For an accurate initialization we use the observation network of Rijkswaterstaat, see [here](http://www.rijkswaterstaat.nl/geotool/watertemperatuur.aspx?cookieload=true) These are downloaded regularly, and daily maximum values are interpolated and gridded for use in WRF.
+
+We considered using satellite SST observations, which could have sufficient resolution to estimate the river temperatures.  We prefer the Rijkswaterstaat observations because they do not have the issues with clouds that are typical of satellite observations.  Also, they are measured in-situ at the most relevant locations.
+
+
+
+
+# <a id="available-data">Available data</a>
+
+There are a large number of datasets publicly available. Some are created by the Dutch government and available under permissive licenses. For official purposes, their use is even required. These datasets are mostly maintained by the Dutch Kadaster, and available via the PDOK website (www.pdok.nl). Also, the Dutch bureau for statistics (CBS) publishes some data there. Below, I list the datasets we chose to base our urban dataset on. I also list some datasets with which I have some experience, or which I believe are of good quality, but did not use for our project.
 
 ## AHN2
 website: [http://www.ahn.nl/wat_is_het_ahn](http://www.ahn.nl/wat_is_het_ahn)
@@ -66,7 +115,8 @@ website: [nationaalgeoregister](http://www.nationaalgeoregister.nl/geonetwork/sr
 
 Geometry of all local municipalities 'gemeenten' and neighborhoods 'buurten' of the Netherlands. Additional demographics from CBS are included.
 
-##  Digitale Kleuren Luchtfoto Nederland 2008 [(DKLN2008)](http://www.bestel3d.nl/nl/en/data/dkln-imagery), Copyright Eurosense B.V.,2008
+## Digitale Kleuren Luchtfoto Nederland 2008 
+website: [(DKLN2008)](http://www.bestel3d.nl/nl/en/data/dkln-imagery), Copyright Eurosense B.V.,2008
 
 Aerial photos of the Netherlands, in full color (RGB) and infrared. Taken mostly during summer, in the same year (2006?). There are some areas taken later in the year, with notably lower NDVI. However, because of the ndvi does not drop below the cut-off used, the effect on the urban fraction map is minimal.
 
@@ -125,10 +175,9 @@ Those datasets were considered, but not used for various reasons (match with oth
 
 
 
-# Used software
+# <a id="used-software">Used software</a>
 
-This page lists the (open source) GIS software I considerd for use in this project. The criteria were that it should be freely available with a permissive license.
-This allows me to easily share our work without having to worry about expensive licenses or vendor lock-in (ArcGIS and windows-only sollutions). Also, if necessary, we can run the scripts on a supercomputer to speed up the calculations if they are too slow.
+This page lists the (open source) GIS software I used in this project. The criteria were that it should be freely available with a permissive license. This allows me to easily share our work without having to worry about expensive licenses or vendor lock-in (ArcGIS and windows-only sollutions). Also, if necessary, we can run the scripts on a supercomputer to speed up the calculations if they are too slow.
 
 ## Proj.4
 website: [http://trac.osgeo.org/proj/](http://trac.osgeo.org/proj/)
@@ -164,6 +213,11 @@ Alternative to the vector part of PostGIS. Fiona provides clean python bindings 
 
 ## Software Alternatives
 
+### ArcGIS
+website: [ArcGIS](http://www.esri.com/software/arcgis)
+
+Industry standard GIS environment, with commerical license. Mostly windows oriented.
+
 ### JHMaps
 website:[http://www.jhlabs.com/java/maps/proj/](http://www.jhlabs.com/java/maps/proj/)
 
@@ -184,10 +238,7 @@ Geometry Engine - Open Source is a C++ port of the  Java Topology Suite (JTS). L
 
 
 
-
-
-
-# Software setup
+# <a id="installing">Installing</a>
 
 In this section I detail the installation of PostgreSQL with the PostGIS extension. This also includes GDAL, as this is heavily used by postgis, and QGIS and ncview to visualize your data. I am using Fedora (version 20, x86_64) when writing this, but the general steps should work on any linux distribution.
 
@@ -210,23 +261,21 @@ Next, install the postgres database and extensions, and some precompiled binarie
 
 ## Rebuild GDAL from source
 
-Depending on your data, it can be necessary to compile GDAL yourself.
-For instance, the ESRI FileGDB format is only supported when pre-compiled binaries (available rom the ESRI website) are available during compile time.
-To compile GDAL we need some extra development packages. 
-The following set is enough to compile a basic GDAL version, and adds support some common formats::
+Depending on your data, it can be necessary to compile GDAL yourself. For instance, the ESRI FileGDB format is only supported when pre-compiled binaries (available rom the ESRI website) are available during compile time.
+To compile GDAL we need some extra development packages. The following set is enough to compile a basic GDAL version, and adds support some common formats:
 
 ```bash
  $ yum install libgeotiff* jasper* grib_api* cairo* libxml2* gcc-c++ libpq* netcdf-devel libicu* harfbuzz* boost* proj-* boost-devel udunits* librasterlite* grass geos* pcre* python-devel
 ```
 
-Download, configure, make and install GDAL. Don't forget to add the PostgreSQL support::
+Download, configure, make and install GDAL. Don't forget to add the PostgreSQL support:
 
 ```bash
  $ ./configure --prefix=/home/escience/Code/gdal/install --with-fgdb=/home/escience/Code/esri/FileGDB_API --with-pg
  $ make && make install
 ```
 
-Finally, add the installation directory to your PATH and LD_LIBRARY_PATH in your *.bashrc*::
+Finally, add the installation directory to your PATH and LD_LIBRARY_PATH in your *.bashrc*:
 
 ```bash
 export PATH=/home/escience/Code/gdal/install/bin:$PATH
@@ -244,21 +293,21 @@ As root, run::
  $ systemctl enable postgresql
 ```
 
-To setup the database, run as root::
+To setup the database, run as root:
 
 ```bash
  $ postgresql-setup initdb
  $ systemctl start postgresql
 ```
 
-Change to the postgres user, and log in to the database sever::
+Change to the postgres user, and log in to the database sever:
 
 ```
  $ su - postgres
  $ psql
 ```
 
-Create a postgis enabled database::
+Create a postgis enabled database:
 
 ```sql
 > create user escience password 'password';
@@ -270,10 +319,8 @@ Create a postgis enabled database::
 Log out, and edit the database settings in the file  */var/lib/pgsql/data/pg_hba.conf*.  Set login options to ident, md5, md5.
 Finally, open the firewall for *postgresql*. On Fedora/GNOME this is easily done using the *Firewall* application.
 
-The default install also needs to be tuned for your hardware.
-This is not a topic I have much experience with; however, a few minutes of googling and reading the postgres logfile tells me to at least increase the meomory settings.
-The configuration is found at */var/lib/pgsql/data/postgres.conf*.
-Uncomment the line and increase the default value to something higher (depending on your system RAM)::
+The default install also needs to be tuned for your hardware. This is not a topic I have much experience with; however, a few minutes of googling and reading the postgres logfile tells me to at least increase the meomory settings.
+The configuration is found at */var/lib/pgsql/data/postgres.conf*. Uncomment the line and increase the default value to something higher (depending on your system RAM):
 
 ```bash
 checkpoint_segments = 16
@@ -308,89 +355,75 @@ For the processing of our own observations I wrote a few scripts in bash and pyt
 * **Postgis gives too much output, and shows me too many notices**
   Reduce the verbosity level by::
 ```
-    set client_min_messages=warning ;
+   # set client_min_messages=warning ;
 ```
 
 * **Postgres cannot open external rasters. raster2pgsql can import the data, but then I cannot access it from within the database.**
-  Errors include *permission denied* and/or *file does not exist*. This can be related to the file permissions: the postgres users needs to have read/write permissions to the file and directory.
-  Fix this by settings the right permissions: *chmod uo+rwx file*. You can check this by changing to the postgres user, and then try to open the file.
+  Errors include *permission denied* and/or *file does not exist*. This can be related to the file permissions: the postgres users needs to have read/write permissions to the file and directory.  Fix this by settings the right permissions: *chmod uo+rwx file*. You can check this by changing to the postgres user, and then try to open the file.
 
 * **Postgres still cannot open external rasters.**
-  When the above does not solve the problem, look at your SElinux settings (*ls -Z*) and check the postgres log files in */var/lib/pgsql/data/pg_log/*
-  Fix the problems by learning SELinux,
-  For instance, to allow postgres to access the directory */data* use semanage and restorecon as root::
-
+  When the above does not solve the problem, look at your SElinux settings (*ls -Z*) and check the postgres log files in */var/lib/pgsql/data/pg_log/*   Fix the problems by learning SELinux: For instance, to allow postgres to access the directory */data* use semanage and restorecon as root:
 ```
     # semanage fcontext -a -t postgresql_db_t /data
     # restorecon -v '/data'
 ```
-
   Much easier is to turn off SElinux. Set *SELINUX=pemissive* in **/etc/selinux/config** and reboot.
 
 * **I cannot set the permissions on my (auto-mounted) external storage.**
-  Add *user_allow_other* to the file **/etc/fuse.conf** to set the permissions to 777.
-  To control other mount options, manually unmount (ie. 'umount' as root), and then mount as desired. This is, as far as I know, the only way to set them as using the GUI to unmount the drive by clicking on the eject buttons also removes the */dev/sd?* block device.
+  Add *user_allow_other* to the file **/etc/fuse.conf** to set the permissions to 777.  To control other mount options, manually unmount (ie. 'umount' as root), and then mount as desired. This is, as far as I know, the only way to set them as using the GUI to unmount the drive by clicking on the eject buttons also removes the */dev/sd?* block device.
 
 * **My queries are too slow**
-  Use *exaplain <query>* and *explain analyze <query>* to see what is going on. Postgis sometimes decides not to use boundingbox checks and gist indices. Force a boundingbox check by using *A && B*.
-  Also always add a *where ST_Intersects( geometryA, geometryB)*.
+  Use *exaplain <query>* and *explain analyze <query>* to see what is going on. Postgis sometimes decides not to use boundingbox checks and gist indices. Force a boundingbox check by using *A && B*.   Also always add a *where ST_Intersects(geometryA, geometryB)*.
 
 
 
-
-# Importing data into the database
+# <a id="importing-data-into-the-database">Importing data into the database</a>
 
 ## Technical discussion
+
 ### Internal or external data files?
 
-Postgis can work both with internal and external data.
-At first glance, extrenal data seems preferable.
-Importing or conversion is not necessary; you can keep a single copy of the data in the original format.
-However, my experience with this is mixed.
-During somewhat complex queries postgres suddenly gives errors that it cannot open the files anymore.
-A way to work around this is to load the problematic tile into the database, and retry.
-With some extra storage I can just read the whole dataset into the database and forget about all this.
+Postgis can work both with internal and external data. At first glance, extrenal data seems preferable. Importing or conversion is not necessary; you can keep a single copy of the data in the original format. However, my experience with this is mixed. During somewhat complex queries postgres suddenly gives errors that it cannot open the files anymore. A way to work around this is to load the problematic tile into the database, and retry. With some extra storage I can just read the whole dataset into the database and forget about all this.
 
-UPDATE: On second thought, the problem with opening external data files could be related to the postgres configuration.
-Still, with external data some of the optimizations discussed below will not work (ie. clustering).
+UPDATE: On second thought, the problem with opening external data files could be related to the postgres configuration. Still, with external data some of the optimizations discussed below will not work (ie. clustering), and a full import is preferred when possible.
 
 ### Importing raster data
 
 Reading a (possibly tiled) GDAL supported raster named *data_???.tif* into the database is done like this:
 
-1. Prepare a table. Set *SRID* to the spatial reference ID of the data, *tablename* to the desired PostgeSQL table name. Also add an gist-index on the raster::
+1. Prepare a table. Set *SRID* to the spatial reference ID of the data, *tablename* to the desired PostgeSQL table name. Also add an gist-index on the raster:
 
-	     raster2pgsql -s SRID -I -p data_000.tif tablename | psql
-	
-2. Append each tile to the table. The *-t* option sets the internal postgres tile size, and has a large impact on the performance. Chosing an optimal tile size is difficult, so let postgis try it::
+```bash
+ $ raster2pgsql -s SRID -I -p data_000.tif tablename | psql
+```
 
-	     find . -name "data_???.tif" > list
-	
-	     for i in `cat list`; do
-	       raster2pgsql -t auto -s SRID -a "$i" tablename | psql
-	       echo $i
-	     done
+2. Append each tile to the table. The *-t* option sets the internal postgres tile size, and has a large impact on the performance. Chosing an optimal tile size is difficult, so let postgis try it:
+```bash
+ $ find . -name "data_???.tif" > list
+ $ for i in `cat list`; do
+ >	raster2pgsql -t auto -s SRID -a "$i" tablename | psql
+ >	echo $i
+>     done
+```
 
-3. For optimal performance also cluster the data::
-
-	     cluster tablename_rast_gist on tablename ;
+3. For optimal performance also cluster the data:
+```sql
+cluster tablename_rast_gist on tablename ;
+```
 	
 4. Vacuum
+```sql
+vacuum tablename ;
+```	
 
-	     vacuum tablename ;
-	
-5.  Finally, add rasterconstraints to make QGis happy::
-
-	     select addrasterconstraints( 'tablename'::text, 'rast'::text );
-	
+5.  Finally, add rasterconstraints to make QGis happy:
+```sql
+select addrasterconstraints( 'tablename'::text, 'rast'::text );
+```
 
 ### Importing shapefile data
 
-Importing shapefile data can be easily done using the  *shp2pgsql* that is part of the PostGIS package.
-The postgis package provided by Fedora does not install the utility correctly.
-Download and compile postgis, and move the the *loader* sub-directory.
-Running the command from here works without problems.
-Alternatively, copy it with one of the GDAL commandline tools, probably *ogr2ogr*.
+Importing shapefile data can be easily done using the  *shp2pgsql* that is part of the PostGIS package. The postgis package provided by Fedora does not install the utility correctly. Download and compile postgis, and move the the *loader* sub-directory. Running the command from here works without problems. Alternatively, copy it with one of the GDAL commandline tools, probably *ogr2ogr*.
 
 ### Importing other vector formats
 
@@ -405,32 +438,30 @@ The most recent dataset containing red, green, blue, and infrared bands are from
 
 The OHN dataset contains 3 layers (total height, object height, and surface height) which are about 500GB each. I arranged to get a copy of the OHN height-above-ground layer, and it is located on escience computer MAQ06 under */data/ohn*.
 
-The OHN tile sizes of about *2000x2500* are too big for postgres. Using the *-t auto* option, raster2pgsql to choses  a more moderate *40x50* pixels. For one of my queries (involving a lot of *ST_Clip* on the OHN data) the auto tile size gave a speedup of a factor of 10! The smaller tiles increases the SQL table size by 31GB (or 25%). This is not really a problem, due to the more efficient compression of PostGIS the table is now only 130GB.
+The OHN tile sizes of about *2000x2500* are too big for postgres. Using the *-t auto* option, raster2pgsql to choses  a more moderate *40x50* pixels. For one of my queries (involving a lot of *ST_Clip* on the OHN data) the auto tile size gave a  speedup of a factor of 10! The smaller tiles increases the SQL table size by 31GB (or 25%). This is not really a problem, due to the more efficient compression of PostGIS the table is now only 130GB.
 
 ## Importing TOP10NL
 
-The TOP10NL data is provided in GML format, basically an extension to XML. The program *ogr2ogr* can parse it an insert it into the postgres database.
-However, the GML is very verbose and results in a very in efficient database structure. I prepared a few scripts that sets-up the tables a bit more efficiently.
-The scripts are written for the November 2013 release, and can be found in the *import* directory of the *summer in the city* github repository.
+The TOP10NL data is provided in GML format, basically an extension to XML. The program *ogr2ogr* can parse it an insert it into the postgres database. However, the GML is very verbose and results in a very in efficient database structure. I prepared a few scripts that sets-up the tables a bit more efficiently. The scripts are written for the November 2013 release, and can be found in the *import* directory of the *summer in the city* github repository.
+
+UPDATE: I used *enums*, but in retrospect I just should have used a separate tables with foreign keys.
 
 1. Make sure the database is set up properly, including the postgis extension.
 
-2. Prepare the talbes using the script::
-
+2. Prepare the talbes using the script:
 ```bash
  $ cat prepare_postgres | psql
 ```
 
-3. Import the TOP10NL using ogr2ogr. Use the *TOP10NL_GML_Filechunks*, as the blocks can contain overlapping data::
-
+3. Import the TOP10NL using ogr2ogr. Use the *TOP10NL_GML_Filechunks*, as the blocks can contain overlapping data:
 ```bash
  $ for i in *.gml; do
  $ cp /home/jiska/DATA/obs/GIS/TOP10NL_myscheme/top10nl.gfs_nowidth ${i%%.gml}.gfs
  $ ogr2ogr -append -progress -f PostgreSQL PG:"dbname=jiska password=postgres" $i
  $ done
 ```
-4. The tables now contain mixed geometries. This is not a problem in principle, but it makes QGIS very slow. The following script creates tables for each geometry type::
 
+4. The tables now contain mixed geometries. This is not a problem in principle, but it makes QGIS very slow. The following script creates tables for each geometry type:
 ```bash
  $ cat finalize_postgres | psql
 ```
@@ -448,62 +479,22 @@ The shapefile can be imported using the *shp2pgsql* utility, or *ogr2ogr* from G
 
 ## Importing soil data
 
-We use the Grondsoortenkaart van Nederland 2006 (WUR-Alterra 2006: dataset Grondsoortenkaart van Nederland 2006, Wageningen).  Downloaded from [here](http://www.wageningenur.nl/nl/show/Grondsoortenkaart.htm) on 25th of November 2014.  The data is in vector format (shapefile and MapInfo), but also available in as a raster with a resolution of 50 by 50 meters.  The accuracy is around 10 to 25 meters.
-
-Although it covers the whole of the Netherlands, areas that are fully covered (ie. large urban areas) are absent.  In our raster version they are mostly set to sand. 
-
+We use the Grondsoortenkaart van Nederland 2006 (WUR-Alterra 2006: dataset Grondsoortenkaart van Nederland 2006, Wageningen).  Downloaded from [here](http://www.wageningenur.nl/nl/show/Grondsoortenkaart.htm) on 25th of November 2014.  The data is in vector format (shapefile and MapInfo), but also available in as a raster with a resolution of 50 by 50 meters.  The accuracy is around 10 to 25 meters. Although it covers the whole of the Netherlands, areas that are fully covered (ie. large urban areas) are absent. In our raster version they are mostly set to sand. 
 The geotiff does not actually have to be imported into the database. Python and GDAL commandline tools are sufficient.
 
 
-# Converting to WRF input
+# <a id="convertnig-to-wrf-input">Converting to WRF input</a>
 
-We start with an overview of the data used in WRF, to inventory which datasets we need to prepare.
-
-## Constant fields
-
-For the calculation of the interaction between the atmosphere and the land (or city!) surface, WRF uses a number of constant geographical fields:
-
-* **SOILTEMP** Annual mean deep soil temperature.
-* **SOILCTOP** 16-category top-layer soil type. As there are a few transitions from river clay to sand, crosssing close to Wageningen, it is important to get the placement of them correct.
-* **SOILBTOP** 16-category bottom-layer soil type.
-* **ALBEDO12M** Monthly varying albedo.
-* **GREENFRAC** Monthly varying greenness of the trees. Could be determined from the [Groen Monitor](http://www.groenmonitor.nl). They use satellite data to determine high temporal resolution NDVI maps at 100 meter resolution. Their focus is on agricultural application. The 100 meter resolution is too coarse to determine the urban fraction  (ie. to detect trees in individual streets), but more than good enough for this GREENFRAC.
-* **SNOALB** Albedo of snow layer. Not too relevant for Dutch heatwaves.
-* **SLOPECAT** Dominant category (?). Calculated from HGT_M field?
-* **CON** Orographic convexity, calculated from the HGT_M field?
-* **VAR** Stdev of subgrid-scale orographic height, calculated from the HGT_M field?
-* **VAR_SSO** Variance of Subgrid Scale Orography, calculated from the HGT_M field?
-* **GWDO** A set of parameters describing the gravity wave drag of the orography (OA1, OA2, OA3, OA4, OL1, OL2, OL3, OL4).  This is more relevant at course resolutions, as the orography is almost fully resolved at 100m. Also, the WRF documentation advices to use a slightly lower resolution for these fields than the actual model resolution.  No changes are necessary. 
-* **URB_PARM** Statistical parameters describing the city. Can be derived from the TOP10NL (or openstreetmap?) and OHN datasets. The statistics are meant for a resolution of a few 100s meters, and lose meaning when the resolution is too high (ie. standard deviation of building height when you have only halve a building in the gridcell). 100m by 100m seems like reasonable compromise.
-* **FRC_URB2D** The fraction of the gridcell covered by non-permeable materials (ie. roads and cities).  Can be derived from areal photos and IR photos via an NDVI.
-* **HGT_M** Orogrphy. Currently taken from Corine (?) at 25m.  For consistency, we should use the elevation layer of the OHN dataset (at 50cm).  25m resolution is probably sufficient.
-* **LANDUSEF** Land use information in either the 24 USGS land use categories, or the Corine dataset. Can be derived from the TOP10NL terrein *typelandgebruik*.
-* **LANDMASK** Can be derived from the water fraction of the landuse data.
-
-
-## Updated fields
-
-The initialization of the atmosphere can be done the usual way from NCAR or ECMWF boundaries. 
-The urban part of WRF (SLUCM) contains a few fields that require either a spin-up or an initialization from previous runs,
- mostly the multilayer building and road temperatures.
 
 ## River and sea surface temperatures
-
-The SST in used by GFS and ECMWF operational forecasts is often a poor match for the waters along the Dutch coastline, ie. North- and South-Holland, and Zeeland.  Inland waters like rivers, the Meuse and Rhine, and the canals in Amsterdam, can even reach temperatures of 20 degrees or more.  For an accurate initialization we use the observation network of Rijkswaterstaat, see [here](http://www.rijkswaterstaat.nl/geotool/watertemperatuur.aspx?cookieload=true) These are downloaded regularly, and daily maximum values are interpolated and gridded for use in WRF.
-
-We considered using satellite SST observations, which could have sufficient resolution to estimate the river temperatures.  We prefer the Rijkswaterstaat observations because they do not have the issues with clouds that are typical of satellite observations.  Also, they are measured in-situ at the most relevant locations.
 
 On the escience computer MAQ06, in directory */home/escience/SST*, the script *prepare_sst.sh* performs the necessary steps.
 
 ## The WRF input format: geogrid
 
-The WRF geogrid format is actually very similar to a format supported by GDAL, the ENVI format.
-Only a few projections are supported, see [this page](http://www.mmm.ucar.edu/wrf/users/docs/user_guide_V3/users_guide_chap3.htm#_Description_of_index) 
-It is probably easiest to just use standard lat lon projection *regular_ll*, which corresponds to the postgis SRID 4326.
-Converting to the geogrid format is then basically a two step process.
+The WRF geogrid format is actually very similar to a format supported by GDAL, the ENVI format. Only a few projections are supported, see [this page](http://www.mmm.ucar.edu/wrf/users/docs/user_guide_V3/users_guide_chap3.htm#_Description_of_index) It is probably easiest to just use standard lat lon projection *regular_ll*, which corresponds to the postgis SRID 4326. Converting to the geogrid format is then basically a two step process.
 
 1. Convert to ENVI, straight from the database::
-
 ```bash
  $ gdal_translate -of ENVI -co INTERLEAVE=BSQ PG:"host=localhost port=5432 user=jiska password=postgres dbname=jiska table=myrasters" out.envi
 ```
@@ -512,8 +503,8 @@ Converting to the geogrid format is then basically a two step process.
  $ gdal_translate -of ENVI -co INTERLEAVE=BSQ input.tif out.envi
 ```
    or write it using the python pgsql script::
-```
- $ select write_file( ST_AsGDALRaster( rast, 'GTiff' ), '/data/landuse_top10nl_tile\_' || rid || '.tif', '777' ) from landuse;
+```sql
+select write_file( ST_AsGDALRaster( rast, 'GTiff' ), '/data/landuse_top10nl_tile\_' || rid || '.tif', '777' ) from landuse;
 ```
    And rename the envi file according to the grid points it containts: *startx-endx.starty-endy* where the counting is using fortran (1-based) conventions.
 
@@ -543,13 +534,11 @@ Converting to the geogrid format is then basically a two step process.
 
 It gets a little more complicated when you use tiles. The tiling can best be done when writing the tiles from the database, but also during processing tiles are necessary to keep postgres (relatively) fast. The following procedure creates a tiling over the Netherlands using SRID 4326 (regular latitude longitude)::
 
-```
+```sql
 CREATE TABLE mytiles(id serial primary key, x integer, y integer);
 SELECT AddGeometryColumn ('public','mytiles','geom',4326,'POLYGON',2);
 INSERT INTO mytiles(x,y,geom)
-SELECT (gv).x    AS x,
-       (gv).y    AS y,
-       (gv).geom AS geom
+SELECT (gv).x    AS x, (gv).y    AS y, (gv).geom AS geom
 FROM (
     SELECT ST_PixelAsPolygons(rast) AS gv FROM (
         SELECT ST_AddBand(rast, 1, '32BSI', 0) AS rast FROM (
@@ -559,34 +548,29 @@ FROM (
 ) AS foo ;
 ```
 
-The main raster will be 2816 by 3264 pixels, divided into 256 by 272 tiles. A pixel is 0.0014614 degrees longitude by -0008979 degrees latitude. Note the minus sign: the top left corner is now pixel (1,1). By looping over this tile table we create a full raster::
-
-```
+The main raster will be 2816 by 3264 pixels, divided into 256 by 272 tiles. A pixel is 0.0014614 degrees longitude by -0008979 degrees latitude. Note the minus sign: the top left corner is now pixel (1,1). By looping over this tile table we create a full raster:
+```sql
 CREATE TABLE myurb(rid integer primary key, rast raster, processed bool);
 
 INSERT INTO myurb(rid, rast, processed) (
 WITH foo AS (
-        SELECT ST_PointN ( ST_Boundary( geom ),1 ) AS ul, 
-                                                                                  x AS x, 
-                                                                                  y AS y 
-        FROM 
-           mytiles
-        WHERE
-            todo = TRUE AND processed = FALSE
+        SELECT ST_PointN ( ST_Boundary( geom ),1 ) AS ul,  x AS x,  y AS y 
+        FROM mytiles
+        WHERE todo = TRUE AND processed = FALSE
     )
 SELECT
-    (y-1)*256 + x                       AS rid,
-    ST_AddBand( ST_MakeEmptyRaster( 11, 12,  ST_X(ul), ST_Y(ul), 0.0014614, -0.0008979, 0, 0, 4326), '32BSI'::text, 0, 0 ) AS rast,
+    (y-1)*256 + x  AS rid,
+    ST_AddBand( ST_MakeEmptyRaster( 11, 12,  ST_X(ul), ST_Y(ul),
+         0.0014614, -0.0008979, 0, 0, 4326), '32BSI'::text, 0, 0 ) AS rast,
     FALSE AS processed
 FROM foo);
 ```
 Where the grid size is 2816/256 = 11 by 3264/272=12 pixels. The band format is *32BSI*, ie. 32 bits is *wordsize=4* and *signed=true* to be set later in the WRF *index* file. The band will be filled by zeros, which is also the *NODATA* value.
 
 
-
 ## Urban fraction
 
-In the WRF city parametrization there is the option to include some vegetation.  This is done by splitting the tile in an urban fraction, and a remaining green fraction.  This urban fraction can be read directly from an input file, or it is set depending on the urban category.  The urban category also defines a number of other paramters (roof albedo, wall albedo, heat capacities), but at the moment the greenfraction is the only parameter that depends on the urban category.  
+In the WRF city parametrization there is the option to include some vegetation.  This is done by splitting the tile in an urban fraction, and a remaining green fraction.  This urban fraction can be read directly from an input file, or it is set depending on the urban category.  The urban category also defines a number of other paramters (roof albedo, wall albedo, heat  capacities), but at the moment the greenfraction is the only parameter that depends on the urban category.  
 
 By WRF defines the following three urban categories:
 
@@ -598,6 +582,7 @@ Industrial or commercial | 95%
 
 
 ### Urban fraction from NDVI 
+
 The urban fraction, or rather the green fraction which is *1 - urban_fraction* can de calculated from the NDVI maps.  The NDVI maps are available at 22cm or 6 meter resolution.  Even at 6 meter we will have about 25 gridpoints for one 25 by 25 meter gridcell, so the urban fraction can be calculated by taken the ratio of urban gridpoints to the total number of gridpoints in the gridcell.
 
 
@@ -612,13 +597,16 @@ Note that for some parts of the north of the Netherlands the infra red photo's w
 
 ### Processing
 
-1. Prepare a *urbanfraction* table, set the *NODATA* value to 255.
-2. Keep running the *urban_fraction* and *make_urb_param* functions on the table until all rows are processed:
-``` 
+* Prepare a *urbanfraction* table, set the *NODATA* value to 255.
+* Keep running the *urban_fraction* and *make_urb_param* functions on the table until all rows are processed:
+
+```sql
 SELECT make_urb_param( 'urban_fraction', 'urbanfraction', rid, 1, 254 ) FROM urbanfraction WHERE processed = FALSE LIMIT 1;
 ```
-3. Write the tiles to disk. We can do this in one step, as the dataset is not too big (130 MB)
-```
+
+* Write the tiles to disk. We can do this in one step, as the dataset is not too big (130 MB):
+
+```sql
 SELECT write_file( ST_AsGdalRaster( rast, 'GTiff' ), '/data/urbanfraction/urbanfraction.tif' ) FROM (SELECT ST_Union(rast) AS rast FROM urbanfraction) AS foo;
 ```
 
@@ -646,6 +634,7 @@ UPDATE v1.1: this will also update the landuse map.  As the road surfaces are mi
 
 ### Conversion to WRF geogrid
 Convert to ENVI::
+
 ```bash
     gdal_translate -of ENVI -co INTERLEAVE=BSQ urbanfraction_final.tif 00001-10648.00001-12672
 ```
@@ -739,26 +728,31 @@ An exact definition of the TOP10NL classes is given in the document *BRT_catalog
 
 1. Prepare the *landuse* table
 2. Run the *aggregate_landuse* function for each tile with *processed=false*
-```
+```sql
 SELECT aggregate_landuse( rid ) FROM landuse WHERE processed=FALSE LIMIT 1;
 ```
   The above function will process one tile, keep running it until all tiles are processed (for instance via a cron job, or a loop in bash)
+.
 3. Write the table to disk
+```sql
+SELECT write_file( ST_AsGDALRaster( rast, 'GTiff' ), '/data/landuse_top10nl_tile\_' || rid || '.tif', '777' ) FROM landuse;
 ```
-select write_file( ST_AsGDALRaster( rast, 'GTiff' ), '/data/landuse_top10nl_tile\_' || rid || '.tif', '777' ) from landuse;
-```
+ .
 4. Combine the geotiff files to a single image
 ```bash
  $ gdal_merge.py -ul_lr 3.345 53.6 7.320008 50.6692544 -o /data/landuse_top10nl.tif -ot Byte -f GTiff -n 0 /data/landuse_top10nl_tile_*.tif
 ```
+.
 5. Reclassify the TOP10NL terrein types to the USGS classes
 ```bash
  $ reclassify.py /data/landuse_top10nl.tif landuse_usgs.tif
 ```
+.
 6. Convert the GeoTIF file to the WRF geogrid input format
 ```bash
  $ gdal_translate -of ENVI -co INTERLEAVE=BSQ landuse_usgs.tif 00001-10880.00001-13056
 ```
+.
 7. Write a geogrid *index* file. It should look something like this:
 
     type=categorical
@@ -805,7 +799,6 @@ Relevant NUDAPT parameters are (1 based):
 * **Variable 95**. Building surface area to plan area ratio (LF_URB2D) *wall_surface_area_ratio* Sum of wall surface and roof surface area in the gridcell divided by the gridcell, lambda_b. Note that this possibly deviates from NUDAPT (exact formulation not clear) in that this also includes the roof. However, the implementation in WRF expects the roof to be included.
 
 * **Variables 96-99**. Frontal Area Index (LF_URB2D) *frontal_area_..* Frontal area depending on orientation, divided by the gridcell area. The four orientations implemented are:
-
       1. *frontal_area_ns*  North-South, or 0 degrees
 
       2. *frontal_area_45*  North-East to South-West, or 45 degrees
@@ -829,7 +822,7 @@ The calculation of the parameters is done in the postgres database using SQL fun
 
 1. A first step is to create a table holding a raster. Make sure the raster is not too big, something less than 50 by 50 points.
 
-2. Add bands for the 132 nudapt parameters using the *create_urb_dataset* function:
+2. Add bands for the 132 nudapt parameters using the *create_urb_dataset* function.
 
 3. The functions take a geometry as input, like a gridcell. The result has to be written to the raster at the proper band. The funtion *make_urb_param* takes care of all this for most functions. For the histogram the function *make_urb_param_histogram* can be used.
 
@@ -839,6 +832,7 @@ The calculation of the parameters is done in the postgres database using SQL fun
 The top soil plays an important role in the land surface scheme, as it determines water capacity and evaporation rates.  It affects the soil temperature, and to a lesser extent the 2 meter temperature.  Wageningen is close a transition in soil type, as to the south there is a the river, where the top soil contains clay, and to North-East the Veluwe which is mostly sand.  This transition is present in the current top soil maps, however, the relatively low resolution (30 seconds) causes the transition to be a straight horizontal line at 52 degrees North, a few kilometers north of Wageningen.  For variables linked to the ground surface, this transition line also appears prominently in the output.  Although the urban weather in wageningen is unlikely to be affected much by small changes in the soil maps, we replace the current top soil map with a higher resolution version.  
 
 ### WRF soil scheme
+
 From the WRF documentation, table 3 found [on the WRF documentation website](http://www2.mmm.ucar.edu/wrf/users/docs/user_guide_V3/users_guide_chap3.htm#_Land_Use_and), we have the following soil classes:
 
 id | description            
@@ -883,7 +877,7 @@ The mapping can be done using the script *reclassify.py*.
 
 
 
-# WPS configuration
+# <a id="wps-configuration"> WPS configuration</a>
 
 All modifications discussed here are merged into the github repository *wps-wur*.
 
@@ -892,8 +886,6 @@ The static 2-D geographic data for use in WRF is prepared by ``geogrid.exe``, a 
 The urban data has been prepared (in units and missing values) that allow a simple area average.  As the ``URB_PARAM`` dataset is tiled, we have a lot of points on the edge of a tile where the gridcell average and the four point bilinear interpolation will not work. For those points we do a nearest neighbour search.  We also would like to use the high resolution landuse and soil top classification map where it is available (remember it only covers the Netherlands).  This can be achieved by using the ``priority`` option.
 
 Add the folling sections to the ``GEOGRID.TBL`` file:
-
-::
 
     ===============================
     name=URB_PARAM
@@ -912,7 +904,7 @@ Add the folling sections to the ``GEOGRID.TBL`` file:
             abs_path=     default:/home/jiska/wrfinput/urbanfraction
     ===============================
 
-For the landuse section we use the ``priority`` option to define two maps for the same parameter, with the high-resolution map having a higher priority::
+For the landuse section we use the ``priority`` option to define two maps for the same parameter, with the high-resolution map having a higher priority:
 
     ===============================
     name=LANDUSEF
@@ -938,7 +930,7 @@ For the landuse section we use the ``priority`` option to define two maps for th
     ===============================
 
 
-The same trick is used for the soil top layer classification::
+The same trick is used for the soil top layer classification:
 
     ===============================
     name=SOILCTOP
@@ -976,17 +968,17 @@ The same trick is used for the soil top layer classification::
     ===============================
 
 
-# WRF configuration
+# <a id="wrf-configuration">WRF configuration</a>
 
 All modifications discussed here are merged into the github repository *wrf-wur*.
 
-We are planning to run the urban forcasts at a resolution of 100m.  However, to run the whole of the Netherlands (or even the whole of Europe) on this reslution would take too much computer resources.  Therefore, we will use the [nested grids](http://www2.mmm.ucar.edu/wrf/users/docs/user_guide/users_guide_chap3.html#_Using_WRFSI_for) feature of WRF.
+We are planning to run the urban forcasts at a resolution of 100m. However, to run the whole of the Netherlands (or even the whole of Europe) on this reslution would take too much computer resources.  Therefore, we will use the [nested grids](http://www2.mmm.ucar.edu/wrf/users/docs/user_guide/users_guide_chap3.html#_Using_WRFSI_for) feature of WRF.
 
 This way, you can run a copy of WRF on a subdomain of the parent grid.  The subdomain run can be configured independently of the embedding run, and this allows you to locally increase model resolution and set model parameters.  In our case, we want to go to a 100m resolution subdomain with the urban parametrizations.  There are some minor constraints on the nesting, mostly to do with grid sizes.  We will use a setup of nested grids to go from a resolution of 12.5km to 2500m, 500m, and finally 100m.
 
 Configuring the nested grids is quite awkward, as you have to give the starting indices on the parent grid.  Aiming your 4 times nested grid precisely at Wageningen, while at the same time keeping the other 4 times nested grid covering Amsterdam is tricky.  Therefore, I wrote a script to help out. *nestwrf.py* can be found in the *tools/forecast* directory of WRF.
 
-It reads the Fortran namelist parses the *geogrid*' and *'share*' sections.  It can then print the configured domains, or add new ones.  New domains are described by their parent and grid ratio, and one of:
+It reads the Fortran namelist parses the ``geogrid`` and ``share`` sections.  It can then print the configured domains, or add new ones.  New domains are described by their parent and grid ratio, and one of:
 
 * The center of the domain and its size in km.
 
@@ -994,8 +986,7 @@ It reads the Fortran namelist parses the *geogrid*' and *'share*' sections.  It 
 
 ## Namelist options
 
-We will want to set some options differently on the nested domain than from the host domain.  Also, we introduced two new settings to control the initialization of the urban model, and those should be added too.
-The entries for *diff_opt*, *km_opt*, *sf_urban_use_wur_config*   , *sf_urban_init_from_file* were updated, see the repository for details.
+We will want to set some options differently on the nested domain than from the host domain.  Also, we introduced two new settings to control the initialization of the urban model, and those should be added too. The entries for *diff_opt*, *km_opt*, *sf_urban_use_wur_config*   , *sf_urban_init_from_file* were updated, see the repository for details.
 
 
 ## Initialization and IO
@@ -1015,18 +1006,19 @@ A Modified ``Registry.EM_COMMON`` is in the *WRF-WUR* repository.
 
 ### Model output
 
-We enabled (a lot of) SLUCM output, again with modifications in the Registry.EM_COMMON.
-Parameters changed were: **TR_URB2D**, **TB_URB2D**, **TG_URB2D**, **TC_URB2D**, **QC_URB2D**, **UC_URB2D**, **XXXR_URB2D**, **XXXB_URB2D**, **XXXG_URB2D**, **XXXC_URB2D**, **TRL_URB3D**, **TBL_URB3D**, **TGL_URB3D**, **SH_URB2D**, **LH_URB2D**, **G_URB2D**, **RN_URB2D**, **TS_URB2D**, **UTYPE_URB2D**, **TC2M_URB2D** and **TP2M_URB2D**.
+We enabled (a lot of) SLUCM output, again with modifications in the ``Registry.EM_COMMON``. 
 
-This also adds the new fields ``TC2M_URB2D`` and ``TP2M_URB2D`` to the output.
+Parameters changed were: 
+**TR_URB2D**, **TB_URB2D**, **TG_URB2D**, **TC_URB2D**, **QC_URB2D**, **UC_URB2D**, **XXXR_URB2D**, **XXXB_URB2D**, **XXXG_URB2D**, **XXXC_URB2D**, **TRL_URB3D**, **TBL_URB3D**, **TGL_URB3D**, **SH_URB2D**, **LH_URB2D**, **G_URB2D**, **RN_URB2D**, **TS_URB2D**, **UTYPE_URB2D**, **TC2M_URB2D** and **TP2M_URB2D**.
 
-
-
-
-
+Note that this also adds the new fields ``TC2M_URB2D`` and ``TP2M_URB2D`` to the output. These are the canyon temperarture, calculated accoring to a formula by Natalie Theeuwes, and the temperature in absense of any city, what we conveniently call the park temperature. For a gridcell represenative temperature, we take the average weighted by the urbanfraction:
+$$ T2M = urbanfraction * TC2M_{URB2D} + (1-urbanfraction) * TP2M_{URB2D} $$
 
 
-# A quick HOWTO run
+
+
+
+# <a id="a-quick-howto-run">A quick HOWTO run</a>
 
 The following steps worked on twrfje (a cluster at the WUR).  Here, you can run the WPS program to create the static input files ``geo_em.dxx.nc``. (the necessary input data is stored there).  
 
@@ -1086,26 +1078,26 @@ As a wrf outputfile generally contains several timesteps, you have to provide th
 
 River and lake temperatures are currently extrapolated from the closest sea surface temperature points.  Depending on your boundaries this could be quite wrong: ie. some North-Sea temperature for the river Rhine.  In the ``WRFV3/tools/forecast`` directory is an example script called ``set_sst.py`` that sets the value of the sea surface temperature to something more reasonable.  The script should be self explanatory.
 
-Note that for the forecasting runs, river temperature observations from Rijkswaterstaat were used.
+Note that for the forecasting runs, river temperature observations from Rijkswaterstaat were used. Interpolation to the inner 2 grids (grids 3 and 4), is done by the ``forecast.sh`` script.
 
 ## Updating your sourcecode
 
 To update your version of WRF or WPS, just run the following command in the source code directory:
 ```bash
-   cd WRFV3
-   git pull
+ $ cd WRFV3
+ $ git pull
 ``` 
 Then recompile as normal. (remember to run ``./clean -a`` if the registry was updated).
 
-# Forecasting system
+# <a id="forecasting-system">Forecasting system</a>
 
 ## current output
 
-# App
+# <a id="app">App</a>
 
 
 
-# Summer in the City Website
+# <a id="suumer-in-the-city-website">Summer in the City Website</a>
 
 Javascript webtechnology changes faster than NLeSC projects, so I wouldn't recommend reusing the exact setup. However, the stuff I used is:
 
@@ -1117,7 +1109,7 @@ Javascript webtechnology changes faster than NLeSC projects, so I wouldn't recom
 The documentation on the website itself has been copied into this document.
 
 
-# Project Output
+# <a id="project-output">Project Output</a>
 
 The MAQ group is quite active with presentations and papers; not all papers listed here are work exclusively funded by this NLeSC project. However, most of the results central to *Summer in the City* are still being analyzed and written down.
 
