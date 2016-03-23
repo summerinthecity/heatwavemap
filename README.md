@@ -13,14 +13,6 @@ The following data is used:
 
 The input data is assumed to be available in a postgres database with postgis extensions installed.
 
-
-The maps are for use in the weather forecasting model WRF, version 3.5 [(homepage)](http://wrf-model.org/index.php).
-Our version of the model with modifications is available here:
-
- * [WRF-WUR](https://github.com/jiskattema/wrf-wur)
- * [WPS-WUR](https://github.com/jiskattema/wps-wur)
-
-For details and documentation, see the [project website](http://www.met.wau.nl/summerinthecity).
 This work can be cites as:
 
 Summer in the City: Forecasting and Mapping Human Thermal Comfort in Urban Areas Attema, J.J. and Heusinkveld, B.G. and Ronda, R.J. and Steeneveld, G.J. and Holtslag, A.A.M.  IEEE 11th International Conference on e-Science (2015)(http://dx.doi.org/10.1109/eScience.2015.21)
