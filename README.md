@@ -1,7 +1,7 @@
 summerinthecity
 ===============
 
-See [here](http://jiskattema.github.io/summerinthecity/) for an interactive heatwave map for the Netherlands.
+See [here](http://summerinthecity.github.io/heatwavemap/) for an interactive heatwave map for the Netherlands.
 
 This repository contains a set of postgres functions I used for creating a high resolution urban map of the Netherlands.
 The following data is used:
